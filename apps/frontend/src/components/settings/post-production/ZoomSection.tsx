@@ -1,6 +1,9 @@
 
 import type { PostProductionConfig } from "@/lib/api";
+import { resolveHint } from "@/components/settings-shared";
 import { NumberField, Section, Toggle } from "./shared";
+
+const zoomHint = resolveHint({ hintKey: "face_tracker_enabled" });
 
 interface Props {
   config: PostProductionConfig;
@@ -12,7 +15,15 @@ interface Props {
 
 export function ZoomSection({ config, onConfigChange }: Props) {
   return (
-    <Section title="Зум с отслеживанием лица">
+    <Section
+      title="Зум с отслеживанием лица"
+      aside={
+        <span className="inline-flex items-center gap-1.5">
+          {zoomHint.badgeNode}
+          {zoomHint.adornment}
+        </span>
+      }
+    >
       <Toggle
         label="Включить зум"
         checked={config.zoom_enabled}
@@ -95,7 +106,7 @@ export function ZoomSection({ config, onConfigChange }: Props) {
               onChange={(v) => onConfigChange("zoom_subsegment_max_sec", v)}
             />
           </div>
-          <p className="text-[11px] text-[color:var(--text-muted)]">
+          <p className="text-[11px] text-[color:var(--mute)]">
             Длинные сегменты разбиваются на планы случайной длины.
             Камера смотрит в лицо, центр — по глазам.
           </p>

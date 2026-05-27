@@ -1,4 +1,3 @@
-
 import { useRouter } from "@/lib/router-compat";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -10,9 +9,13 @@ import {
 } from "@/lib/api/scheduler";
 import type { Project } from "@/lib/api/projects";
 import { SCHEDULER_TZ } from "@/lib/constants/scheduler";
+import { Button } from "@/components/ui";
+import { useToast } from "@/contexts";
 import { ReelPicker } from "./ReelPicker";
 import { AccountsPicker } from "./AccountsPicker";
 import { ScheduleTimeline } from "./ScheduleTimeline";
+import { WizardStepper, WIZARD_STEP_LABELS, type WizardStep } from "./WizardStepper";
+import { WizardSummary } from "./WizardSummary";
 
 interface Props {
   accounts: PublerAccount[];
@@ -20,15 +23,6 @@ interface Props {
   likedReels: LikedReelRef[];
   projects: Project[];
 }
-
-type Step = 1 | 2 | 3 | 4;
-
-const STEP_LABELS: Record<Step, string> = {
-  1: "Источник",
-  2: "Назначения",
-  3: "Расписание",
-  4: "Подтверждение",
-};
 
 function defaultCampaignName(): string {
   const now = new Date();
@@ -44,32 +38,29 @@ function todayIso(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-function formatDateLabel(iso: string): string {
-  try {
-    return new Date(iso + "T00:00:00").toLocaleDateString("ru-RU", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-const MODE_LABEL: Record<ScheduleDistributionMode, string> = {
-  per_date: "По датам вручную",
-  single_day: "В один день",
-  serial: "Серия каждые N дней",
+const STEP_HEADER: Record<WizardStep, { title: string; desc: string }> = {
+  1: {
+    title: "Выберите рилсы для кампании",
+    desc: "Доступны только сохранённые в лайки нарезки. Отфильтруйте по проекту или джобу.",
+  },
+  2: {
+    title: "Куда публикуем",
+    desc: "Отметьте аккаунты Publer. Для каждого нужен профиль — иначе подпись не соберётся.",
+  },
+  3: {
+    title: "Расписание",
+    desc: "Одно время для всех аккаунтов. Публикации разложатся равномерно по выбранным датам.",
+  },
+  4: {
+    title: "Подтверждение",
+    desc: "Проверьте параметры — после создания соберём подпись для каждой публикации и запустим доставку.",
+  },
 };
 
-export function CampaignWizard({
-  accounts,
-  profiles,
-  likedReels,
-  projects,
-}: Props) {
+export function CampaignWizard({ accounts, profiles, likedReels, projects }: Props) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>(1);
+  const toast = useToast();
+  const [step, setStep] = useState<WizardStep>(1);
   const [campaignName, setCampaignName] = useState<string>(defaultCampaignName);
   const [selectedReelIds, setSelectedReelIds] = useState<number[]>([]);
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
@@ -81,16 +72,13 @@ export function CampaignWizard({
   const [serialStartDate, setSerialStartDate] = useState<string>(todayIso);
   const [serialIntervalDays, setSerialIntervalDays] = useState<number>(1);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const pendingRef = useRef(false);
 
   const scheduleValid = useMemo<boolean>(() => {
     if (timeOfDay.length === 0) return false;
     if (mode === "per_date") return dates.length > 0;
-    if (mode === "single_day")
-      return singleDayDate.length > 0 && singleDayIntervalMin >= 1;
-    if (mode === "serial")
-      return serialStartDate.length > 0 && serialIntervalDays >= 1;
+    if (mode === "single_day") return singleDayDate.length > 0 && singleDayIntervalMin >= 1;
+    if (mode === "serial") return serialStartDate.length > 0 && serialIntervalDays >= 1;
     return false;
   }, [
     mode,
@@ -122,19 +110,15 @@ export function CampaignWizard({
     campaignName.trim().length > 0;
 
   const handleNext = () => {
-    if (!canAdvance) return;
-    setStep((prev) => ((prev + 1) as Step));
+    if (canAdvance) setStep((prev) => (prev + 1) as WizardStep);
   };
-
   const handleBack = () => {
-    if (step === 1) return;
-    setStep((prev) => ((prev - 1) as Step));
+    if (step > 1) setStep((prev) => (prev - 1) as WizardStep);
   };
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit || pendingRef.current) return;
     pendingRef.current = true;
-    setError(null);
     setSubmitting(true);
     let campaignId: number | null = null;
     try {
@@ -147,21 +131,20 @@ export function CampaignWizard({
         mode,
         dates: mode === "per_date" ? dates : undefined,
         single_day_date: mode === "single_day" ? singleDayDate : undefined,
-        single_day_interval_min:
-          mode === "single_day" ? singleDayIntervalMin : undefined,
+        single_day_interval_min: mode === "single_day" ? singleDayIntervalMin : undefined,
         serial_start_date: mode === "serial" ? serialStartDate : undefined,
-        serial_interval_days:
-          mode === "serial" ? serialIntervalDays : undefined,
+        serial_interval_days: mode === "serial" ? serialIntervalDays : undefined,
       });
       campaignId = response.campaign.id;
       await schedulerApi.approveCampaign(campaignId);
+      toast.success("Кампания создана и запущена");
       router.push("/scheduler");
       router.refresh();
-    } catch (exc) {
+    } catch (err) {
       if (campaignId !== null) {
         await schedulerApi.deleteCampaign(campaignId).catch(() => undefined);
       }
-      setError(exc instanceof Error ? exc.message : String(exc));
+      toast.showError(err);
       setSubmitting(false);
     } finally {
       pendingRef.current = false;
@@ -179,6 +162,7 @@ export function CampaignWizard({
     selectedReelIds,
     selectedAccountIds,
     router,
+    toast,
   ]);
 
   const accountsById = useMemo(() => {
@@ -199,291 +183,94 @@ export function CampaignWizard({
     return m;
   }, [likedReels]);
 
+  const header = STEP_HEADER[step];
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Step indicator */}
-      <nav className="surface-card flex flex-wrap gap-2 p-3" aria-label="Шаги">
-        {([1, 2, 3, 4] as Step[]).map((n) => {
-          const active = n === step;
-          const completed = n < step;
-          const clickable = n < step;
-          return (
-            <button
-              key={n}
-              type="button"
-              onClick={() => clickable && setStep(n)}
-              disabled={!clickable}
-              className={`flex min-w-[140px] flex-1 items-center gap-2 rounded-md border px-3 py-2 text-left transition-colors ${
-                active
-                  ? "border-[color:var(--gold)] bg-[color:var(--ink-2)]"
-                  : completed
-                    ? "border-[color:var(--line)] bg-transparent cursor-pointer hover:border-[color:var(--gold)]"
-                    : "border-[color:var(--line)] bg-transparent cursor-not-allowed opacity-60"
-              }`}
-            >
-              <span
-                className={`mono flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] ${
-                  active
-                    ? "border-[color:var(--gold)] text-[color:var(--gold)]"
-                    : completed
-                      ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-[color:var(--ink)]"
-                      : "border-[color:var(--line)] text-[color:var(--mute-2)]"
-                }`}
-              >
-                {completed ? "✓" : n}
-              </span>
-              <span className="flex flex-col">
-                <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-                  шаг {n}
-                </span>
-                <span
-                  className={`text-[13px] ${
-                    active
-                      ? "text-[color:var(--paper)]"
-                      : "text-[color:var(--paper-dim)]"
-                  }`}
-                >
-                  {STEP_LABELS[n]}
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+    <div className="flex flex-col gap-8">
+      <WizardStepper current={step} onGoto={setStep} />
 
-      {error ? (
-        <div className="rounded-lg border border-[color:var(--danger)] bg-[color:var(--danger)]/10 p-3 text-sm text-[color:var(--danger)]">
-          {error}
-        </div>
-      ) : null}
+      <section className="flex flex-col gap-5">
+        <header className="flex flex-col gap-1.5">
+          <h2 className="display-serif text-xl text-[var(--paper)] md:text-2xl">
+            {header.title}
+          </h2>
+          <p className="text-[0.9375rem] leading-relaxed text-[var(--mute-2)]">{header.desc}</p>
+        </header>
 
-      {/* Step body */}
-      <section className="flex flex-col gap-4">
         {step === 1 ? (
-          <>
-            <header className="flex flex-col gap-1">
-              <h2 className="display-serif text-2xl text-[color:var(--paper)]">
-                Выбери рилсы для кампании
-              </h2>
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Отмечены только лайкнутые нарезки. Фильтруй по проекту и job.
-              </p>
-            </header>
-            <ReelPicker
-              reels={likedReels}
-              projects={projects}
-              selectedIds={selectedReelIds}
-              onSelectionChange={setSelectedReelIds}
-            />
-          </>
+          <ReelPicker
+            reels={likedReels}
+            projects={projects}
+            selectedIds={selectedReelIds}
+            onSelectionChange={setSelectedReelIds}
+          />
         ) : null}
 
         {step === 2 ? (
-          <>
-            <header className="flex flex-col gap-1">
-              <h2 className="display-serif text-2xl text-[color:var(--paper)]">
-                Куда публиковать
-              </h2>
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Выбери аккаунты Publer. Для каждого должен быть настроен
-                профиль — иначе caption не сгенерируется.
-              </p>
-            </header>
-            <AccountsPicker
-              accounts={accounts}
-              profiles={profiles}
-              selectedIds={selectedAccountIds}
-              onSelectionChange={setSelectedAccountIds}
-            />
-          </>
+          <AccountsPicker
+            accounts={accounts}
+            profiles={profiles}
+            selectedIds={selectedAccountIds}
+            onSelectionChange={setSelectedAccountIds}
+          />
         ) : null}
 
         {step === 3 ? (
-          <>
-            <header className="flex flex-col gap-1">
-              <h2 className="display-serif text-2xl text-[color:var(--paper)]">
-                Расписание
-              </h2>
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Одно время для всех аккаунтов. Кампания разложится равномерно
-                по выбранным датам.
-              </p>
-            </header>
-            <ScheduleTimeline
-              mode={mode}
-              onModeChange={setMode}
-              timeOfDay={timeOfDay}
-              onTimeChange={setTimeOfDay}
-              dates={dates}
-              onDatesChange={setDates}
-              singleDayDate={singleDayDate}
-              onSingleDayDateChange={setSingleDayDate}
-              singleDayIntervalMin={singleDayIntervalMin}
-              onSingleDayIntervalChange={setSingleDayIntervalMin}
-              serialStartDate={serialStartDate}
-              onSerialStartDateChange={setSerialStartDate}
-              serialIntervalDays={serialIntervalDays}
-              onSerialIntervalDaysChange={setSerialIntervalDays}
-              reelsCount={selectedReelIds.length}
-              accountsCount={selectedAccountIds.length}
-            />
-          </>
+          <ScheduleTimeline
+            mode={mode}
+            onModeChange={setMode}
+            timeOfDay={timeOfDay}
+            onTimeChange={setTimeOfDay}
+            dates={dates}
+            onDatesChange={setDates}
+            singleDayDate={singleDayDate}
+            onSingleDayDateChange={setSingleDayDate}
+            singleDayIntervalMin={singleDayIntervalMin}
+            onSingleDayIntervalChange={setSingleDayIntervalMin}
+            serialStartDate={serialStartDate}
+            onSerialStartDateChange={setSerialStartDate}
+            serialIntervalDays={serialIntervalDays}
+            onSerialIntervalDaysChange={setSerialIntervalDays}
+            reelsCount={selectedReelIds.length}
+            accountsCount={selectedAccountIds.length}
+          />
         ) : null}
 
         {step === 4 ? (
-          <>
-            <header className="flex flex-col gap-1">
-              <h2 className="display-serif text-2xl text-[color:var(--paper)]">
-                Подтверждение
-              </h2>
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Проверь параметры — после создания бэкенд сгенерирует caption
-                для каждой публикации и запустит воркер.
-              </p>
-            </header>
-
-            <div className="surface-card flex flex-col gap-4 p-5">
-              <label className="flex flex-col gap-1.5">
-                <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-                  Название кампании
-                </span>
-                <input
-                  type="text"
-                  value={campaignName}
-                  onChange={(e) => setCampaignName(e.target.value)}
-                  className="rounded-md border border-[color:var(--line)] bg-[color:var(--ink-2)] px-3 py-2 text-[13px] text-[color:var(--paper)] outline-none transition-colors focus:border-[color:var(--gold)]"
-                />
-              </label>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-                    рилсов
-                  </span>
-                  <span className="display-serif text-3xl text-[color:var(--paper)]">
-                    {selectedReelIds.length}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-                    аккаунтов
-                  </span>
-                  <span className="display-serif text-3xl text-[color:var(--paper)]">
-                    {selectedAccountIds.length}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-                    публикаций всего
-                  </span>
-                  <span className="display-serif text-3xl text-[color:var(--paper)]">
-                    {selectedReelIds.length * selectedAccountIds.length}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1 border-t border-[color:var(--line)] pt-3">
-                <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-                  режим · время · tz
-                </span>
-                <span className="text-sm text-[color:var(--paper)]">
-                  {MODE_LABEL[mode]} · {timeOfDay} · {SCHEDULER_TZ} (+07)
-                </span>
-                <span className="text-[11px] text-[color:var(--text-secondary)]">
-                  {mode === "per_date"
-                    ? `${dates.length} ${
-                        dates.length === 1 ? "дата" : "дат"
-                      }: ${dates.map(formatDateLabel).join(", ")}`
-                    : mode === "single_day"
-                      ? `В один день ${formatDateLabel(
-                          singleDayDate,
-                        )}, шаг ${singleDayIntervalMin} мин`
-                      : `Серия с ${formatDateLabel(
-                          serialStartDate,
-                        )}, шаг ${serialIntervalDays} ${
-                          serialIntervalDays === 1 ? "день" : "дн."
-                        }`}
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-2 border-t border-[color:var(--line)] pt-3">
-                <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-                  аккаунты
-                </span>
-                <ul className="flex flex-wrap gap-1.5">
-                  {selectedAccountIds.map((id) => {
-                    const p = profilesById.get(id);
-                    const a = accountsById.get(id);
-                    const label = p?.display_name ?? a?.name ?? id;
-                    return (
-                      <li
-                        key={id}
-                        className="mono rounded border border-[color:var(--line)] bg-[color:var(--ink)] px-2 py-0.5 text-[11px] text-[color:var(--paper)]"
-                      >
-                        {label}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-
-              <div className="flex flex-col gap-2 border-t border-[color:var(--line)] pt-3">
-                <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-                  рилсы
-                </span>
-                <ul className="flex flex-wrap gap-1.5">
-                  {selectedReelIds.map((id) => {
-                    const r = reelsById.get(id);
-                    return (
-                      <li
-                        key={id}
-                        className="mono rounded border border-[color:var(--line)] bg-[color:var(--ink)] px-2 py-0.5 text-[11px] text-[color:var(--paper)]"
-                      >
-                        #{id}
-                        {r ? ` · ${r.job_id.slice(0, 6)}…` : ""}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            </div>
-          </>
+          <WizardSummary
+            campaignName={campaignName}
+            onNameChange={setCampaignName}
+            selectedReelIds={selectedReelIds}
+            selectedAccountIds={selectedAccountIds}
+            mode={mode}
+            timeOfDay={timeOfDay}
+            dates={dates}
+            singleDayDate={singleDayDate}
+            singleDayIntervalMin={singleDayIntervalMin}
+            serialStartDate={serialStartDate}
+            serialIntervalDays={serialIntervalDays}
+            accountsById={accountsById}
+            profilesById={profilesById}
+            reelsById={reelsById}
+          />
         ) : null}
       </section>
 
-      {/* Bottom bar */}
-      <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[color:var(--line)] bg-[color:var(--ink)] p-3 shadow-lg">
-        <button
-          type="button"
-          onClick={handleBack}
-          disabled={step === 1 || submitting}
-          className="rounded-md border border-[color:var(--line)] px-4 py-2 text-[12px] text-[color:var(--paper-dim)] transition-colors hover:text-[color:var(--paper)] disabled:cursor-not-allowed disabled:opacity-50"
-        >
+      <div className="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 border border-[var(--line)] bg-[var(--ink)] p-3">
+        <Button variant="secondary" onClick={handleBack} disabled={step === 1 || submitting}>
           ← Назад
-        </button>
-
-        <span className="mono text-[11px] uppercase tracking-[0.14em] text-[color:var(--mute-2)]">
-          шаг {step} из 4 · {STEP_LABELS[step]}
+        </Button>
+        <span className="mono hidden text-[0.6875rem] uppercase tracking-[0.14em] text-[var(--mute-2)] sm:inline">
+          Шаг {step} из 4 · {WIZARD_STEP_LABELS[step]}
         </span>
-
         {step < 4 ? (
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={!canAdvance || submitting}
-            className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Далее →
-          </button>
+          <Button variant="primary" onClick={handleNext} disabled={!canAdvance || submitting}>
+            Дальше →
+          </Button>
         ) : (
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit || submitting}
-            className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {submitting ? "Создаю…" : "Создать кампанию"}
-          </button>
+          <Button variant="primary" onClick={handleSubmit} loading={submitting} disabled={!canSubmit}>
+            Создать кампанию
+          </Button>
         )}
       </div>
     </div>

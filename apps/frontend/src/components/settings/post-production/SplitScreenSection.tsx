@@ -8,7 +8,10 @@ import {
   type VideoAsset,
 } from "@/lib/api";
 import { SplitScreenPreviewEditor } from "@/components/SplitScreenPreviewEditor";
+import { resolveHint } from "@/components/settings-shared";
 import { AssetSelect, Field, Section, Toggle } from "./shared";
+
+const splitHint = resolveHint({ hintKey: "split_screen_enabled" });
 
 interface Props {
   config: PostProductionConfig;
@@ -60,10 +63,10 @@ export function SplitScreenSection({
             key={m}
             type="button"
             onClick={() => onSplitScreenFieldChange(field, m)}
-            className={`flex-1 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex-1 rounded-none border px-2 py-1.5 text-xs font-medium transition-colors ${
               active
-                ? "border-[color:var(--accent-primary)] bg-[color:var(--accent-primary-subtle)] text-[color:var(--accent-primary-hover)]"
-                : "border-[color:var(--border-default)] bg-[color:var(--surface-raised)] text-[color:var(--text-secondary)] hover:border-[color:var(--border-default)] hover:text-[color:var(--text-primary)]"
+                ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-[color:var(--gold-dim)]"
+                : "border-[color:var(--line)] bg-[color:var(--ink)] text-[color:var(--mute-2)] hover:border-[color:var(--line)] hover:text-[color:var(--paper)]"
             }`}
           >
             {FIT_LABELS[m]}
@@ -78,7 +81,15 @@ export function SplitScreenSection({
   const ratioDisabled = mainManual && companionManual;
 
   return (
-    <Section title="Сплит-скрин">
+    <Section
+      title="Сплит-скрин"
+      aside={
+        <span className="inline-flex items-center gap-1.5">
+          {splitHint.badgeNode}
+          {splitHint.adornment}
+        </span>
+      }
+    >
       <Field label="Компаньон-ролик">
         <AssetSelect
           assets={assets}
@@ -86,7 +97,7 @@ export function SplitScreenSection({
           onChange={onCompanionAssetChange}
         />
       </Field>
-      <p className="text-[11px] text-[color:var(--text-muted)]">
+      <p className="text-[11px] text-[color:var(--mute)]">
         Второй видеопоток, который накладывается поверх основного.
         Например, реакция на экран или дополнительная камера.
       </p>
@@ -99,7 +110,7 @@ export function SplitScreenSection({
 
       {splitScreen.enabled && (
         <>
-          <div className="rounded-md border border-[color:var(--warning)]/40/30 bg-amber-950/20 p-3 text-sm text-[color:var(--warning)]">
+          <div className="rounded-none border border-[color:var(--warning)]/40/30 bg-amber-950/20 p-3 text-sm text-[color:var(--warning)]">
             <div className="mb-1 font-medium">Split-режим активен</div>
             <div className="leading-relaxed">
               Основные настройки <span className="font-mono">fit / fill</span>{" "}
@@ -130,9 +141,9 @@ export function SplitScreenSection({
               onChange={(e) =>
                 onSplitScreenFieldChange("split_ratio", Number(e.target.value))
               }
-              className="w-full accent-[color:var(--accent-primary)] disabled:opacity-40"
+              className="w-full accent-[color:var(--gold)] disabled:opacity-40"
             />
-            <span className="text-[11px] text-[color:var(--text-muted)]">
+            <span className="text-[11px] text-[color:var(--mute)]">
               {ratioDisabled
                 ? "Обе панели в режиме «Вручную» — соотношение игнорируется, позиции задаются перетаскиванием."
                 : "Панель в режиме Fill/Fit занимает долю кадра по соотношению. Main — сверху, companion — снизу."}
@@ -141,8 +152,8 @@ export function SplitScreenSection({
 
           {companionAssetId !== null ? (
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5 rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface-sunken)] p-3">
-                <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[color:var(--text-muted)]">
+              <div className="flex flex-col gap-1.5 rounded-none border border-[color:var(--line)] bg-[color:var(--ink-3)] p-3">
+                <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[color:var(--mute)]">
                   Образец кадра для предпросмотра (опционально)
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
@@ -151,30 +162,30 @@ export function SplitScreenSection({
                     type="file"
                     accept="image/*,video/*"
                     onChange={onSampleFrameSelected}
-                    className="block max-w-full text-[11px] text-[color:var(--text-primary)] file:mr-2 file:rounded-md file:border file:border-[color:var(--border-default)] file:bg-[color:var(--surface-raised)] file:px-2 file:py-1 file:text-[11px] file:text-[color:var(--text-primary)] hover:file:bg-[color:var(--surface-sunken)]"
+                    className="block max-w-full text-[11px] text-[color:var(--paper)] file:mr-2 file:rounded-none file:border file:border-[color:var(--line)] file:bg-[color:var(--ink)] file:px-2 file:py-1 file:text-[11px] file:text-[color:var(--paper)] hover:file:bg-[color:var(--ink-3)]"
                   />
                   {sampleFrameDataUrl && (
                     <button
                       type="button"
                       onClick={onResetSampleFrame}
-                      className="rounded-md border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-2 py-1 text-[11px] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-sunken)]"
+                      className="rounded-none border border-[color:var(--line)] bg-[color:var(--ink)] px-2 py-1 text-[11px] text-[color:var(--paper)] hover:bg-[color:var(--ink-3)]"
                     >
                       Сбросить
                     </button>
                   )}
                   {sampleFrameLoading && (
-                    <span className="text-[11px] text-[color:var(--text-muted)]">
+                    <span className="text-[11px] text-[color:var(--mute)]">
                       Извлекаю кадр…
                     </span>
                   )}
                 </div>
-                <span className="text-[11px] leading-relaxed text-[color:var(--text-muted)]">
+                <span className="text-[11px] leading-relaxed text-[color:var(--mute)]">
                   Изображение или видео используется только для
                   настройки preview в этой сессии — в базу ничего
                   не сохраняется.
                 </span>
               </div>
-              <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[color:var(--text-muted)]">
+              <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[color:var(--mute)]">
                 Превью раскладки
               </span>
               <div className="overflow-x-auto">
@@ -188,7 +199,7 @@ export function SplitScreenSection({
               </div>
             </div>
           ) : (
-            <p className="rounded-md border border-[color:var(--border-subtle)] bg-[color:var(--surface-sunken)] px-3 py-2 text-[11px] text-[color:var(--text-muted)]">
+            <p className="rounded-none border border-[color:var(--line)] bg-[color:var(--ink-3)] px-3 py-2 text-[11px] text-[color:var(--mute)]">
               Выбери компаньон-ролик выше, чтобы увидеть превью
               раскладки.
             </p>

@@ -192,18 +192,33 @@ export function TinderClient({ job, initialReels }: Props) {
 
   return (
     <main className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-black text-white">
-      <header className="flex shrink-0 items-center justify-between px-4 py-2 text-xs">
-        <Link
-          to={`/jobs/${job.id}`}
-          className="font-mono uppercase tracking-[0.14em] text-white/70 transition-colors hover:text-white"
+      <header className="flex shrink-0 flex-col gap-2 px-4 py-2 text-xs">
+        <div className="flex items-center justify-between">
+          <Link
+            to={`/jobs/${job.id}`}
+            className="font-mono uppercase tracking-[0.14em] text-white/70 transition-colors hover:text-white"
+          >
+            ← Галерея
+          </Link>
+          <div className="flex items-center gap-3">
+            <SpeedSelector value={playbackRate} onChange={setPlaybackRate} />
+            <span className="font-mono text-white/60 tabular-nums">
+              {index + 1} / {reels.length}
+            </span>
+          </div>
+        </div>
+        <div
+          className="h-1 w-full overflow-hidden bg-white/10"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={reels.length}
+          aria-valuenow={index}
+          aria-label="Размечено рилсов"
         >
-          ← Галерея
-        </Link>
-        <div className="flex items-center gap-3">
-          <SpeedSelector value={playbackRate} onChange={setPlaybackRate} />
-          <span className="font-mono text-white/60 tabular-nums">
-            {index + 1} / {reels.length}
-          </span>
+          <div
+            className="h-full bg-[color:var(--gold)] transition-[width] duration-300 ease-out"
+            style={{ width: `${(index / reels.length) * 100}%` }}
+          />
         </div>
       </header>
 
@@ -213,7 +228,7 @@ export function TinderClient({ job, initialReels }: Props) {
             viewport, иначе card + actions + hint vylazят за 100dvh. */}
         <div className="flex min-h-0 w-full flex-1 items-center justify-center">
           <div
-            className={`relative aspect-[9/16] h-full max-h-full overflow-hidden rounded-2xl bg-neutral-900 shadow-2xl transition-transform duration-300 ${
+            className={`relative aspect-[9/16] h-full max-h-full overflow-hidden rounded-none border border-white/10 bg-neutral-900 shadow-2xl transition-transform duration-300 ease-out ${
               verdict === "like"
                 ? "rotate-3 translate-x-6 opacity-70"
                 : verdict === "dislike"
@@ -380,9 +395,12 @@ function ActionButton({
   hotkey: string;
 }) {
   const palette = {
-    danger: "bg-[color:var(--danger)] hover:bg-[color:var(--danger)]/85",
-    neutral: "bg-neutral-800 hover:bg-neutral-700 text-white/80",
-    accent: "bg-[color:var(--success)] hover:bg-[color:var(--success)]/85",
+    danger:
+      "border border-[color:var(--chi,#8B2500)] bg-transparent text-[color:var(--chi,#8B2500)] hover:bg-[color:var(--chi,#8B2500)] hover:text-white",
+    neutral:
+      "border border-white/20 bg-transparent text-white/70 hover:bg-white/10 hover:text-white",
+    accent:
+      "border border-[color:var(--gold)] bg-[color:var(--gold)] text-[color:var(--ink)] hover:bg-[color:var(--accent-bright)]",
   }[tone];
   const size = tone === "neutral" ? "size-14" : "size-16";
   return (
@@ -392,7 +410,7 @@ function ActionButton({
         onClick={onClick}
         disabled={disabled}
         aria-label={label}
-        className={`${size} flex items-center justify-center rounded-full text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 ${palette}`}
+        className={`${size} flex items-center justify-center rounded-none shadow-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-px ${palette}`}
       >
         {icon}
       </button>
@@ -407,11 +425,11 @@ function VerdictOverlay({ verdict }: { verdict: Verdict | null }) {
   if (!verdict) return null;
   const config: Record<Verdict, { bg: string; label: string }> = {
     like: {
-      bg: "bg-[color:var(--success)]/80 text-[color:var(--ink)]",
+      bg: "bg-[color:var(--gold)]/85 text-[color:var(--ink)]",
       label: "НРА",
     },
     dislike: {
-      bg: "bg-[color:var(--danger)]/80 text-[color:var(--ink)]",
+      bg: "bg-[color:var(--chi,#8B2500)]/85 text-white",
       label: "НЕ НРА",
     },
     skip: {
@@ -446,7 +464,7 @@ function EmptyShell({
       <p className="max-w-sm text-sm text-white/70">{body}</p>
       <Link
         to={`/jobs/${jobId}`}
-        className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black"
+        className="inline-flex min-h-11 items-center rounded-none border border-[color:var(--gold)] bg-[color:var(--gold)] px-5 text-sm font-semibold text-[color:var(--ink)] transition-colors hover:bg-[color:var(--accent-bright)]"
       >
         Вернуться в галерею
       </Link>

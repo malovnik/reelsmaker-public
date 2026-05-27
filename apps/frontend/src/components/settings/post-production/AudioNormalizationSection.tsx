@@ -29,9 +29,9 @@ export function AudioNormalizationSection({ config, onConfigChange }: Props) {
           onChange={(e) =>
             onConfigChange("audio_target_lufs", Number(e.target.value))
           }
-          className="w-full accent-[color:var(--accent-primary)]"
+          className="w-full accent-[color:var(--gold)]"
         />
-        <span className="text-[11px] text-[color:var(--text-muted)]">
+        <span className="text-[11px] text-[color:var(--mute)]">
           Для Instagram, TikTok и YouTube стандарт — −14 LUFS.
           Для подкастов — −16 LUFS.
         </span>

@@ -20,14 +20,14 @@ export function AutoModeGroup({ values, update, onReset }: Props) {
         ]}
         onChange={(v) => update("pipeline_mode", v)}
       />
-      <p className="text-xs text-[color:var(--text-muted)]">
+      <p className="text-xs text-[color:var(--mute)]">
         Формат кадра, модель распознавания, включатели зума и ч-б —
         Auto не трогает, они остаются под твоим контролем в UploadWizard.
       </p>
       <button
         type="button"
         onClick={onReset}
-        className="self-start text-xs text-[color:var(--accent-primary)] underline-offset-2 hover:underline"
+        className="self-start text-xs text-[color:var(--gold)] underline-offset-2 hover:underline"
       >
         Вернуть стандартные значения
       </button>

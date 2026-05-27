@@ -1,6 +1,8 @@
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api } from "@/lib/api";
+import { useToast } from "@/contexts";
+import { Modal, Button } from "@/components/ui";
 
 interface Props {
   jobId: string;
@@ -11,82 +13,64 @@ interface Props {
 interface PresetOption {
   id: string;
   label: string;
+  /** Что пресет реально задаёт: имя файла и шаблон подписи под площадку. */
   hint: string;
 }
 
 const PRESETS: PresetOption[] = [
-  { id: "tiktok", label: "TikTok", hint: "6 Мбит · -14 LUFS" },
-  { id: "reels", label: "Instagram Reels", hint: "5 Мбит · -14 LUFS" },
-  { id: "shorts", label: "YouTube Shorts", hint: "8 Мбит · -14 LUFS" },
-  { id: "x", label: "X / Twitter", hint: "5 Мбит · -14 LUFS" },
+  { id: "tiktok", label: "TikTok", hint: "Имя файла и подпись под TikTok" },
+  { id: "reels", label: "Instagram Reels", hint: "Имя файла и подпись под Reels" },
+  { id: "shorts", label: "YouTube Shorts", hint: "Имя файла и подпись под Shorts" },
+  { id: "x", label: "X / Twitter", hint: "Имя файла и подпись под X" },
 ];
 
 export function ExportDialog({ jobId, reelId, onClose }: Props) {
+  const toast = useToast();
   const [selected, setSelected] = useState<string>("tiktok");
   const [loading, setLoading] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
 
   const onExport = async () => {
     setLoading(true);
-    setError(null);
     try {
       const resp = await api.exportReel(jobId, reelId, selected);
       setDownloadUrl(resp.download_url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      toast.showError(err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="export-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      title="Экспорт рилса"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Отмена
+          </Button>
+          <Button onClick={onExport} loading={loading}>
+            {loading ? "Готовим" : "Подготовить файл"}
+          </Button>
+        </>
+      }
     >
-      <div
-        className="surface-card w-full max-w-md p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2
-            id="export-dialog-title"
-            className="display-serif text-[22px] leading-tight text-[color:var(--paper)]"
-          >
-            Экспорт рилса
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Закрыть"
-            className="mono text-[11px] uppercase tracking-[0.14em] text-[color:var(--mute-2)] transition-colors hover:text-[color:var(--paper)]"
-          >
-            ×
-          </button>
-        </div>
-        <div className="divider my-4">пресеты</div>
-
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 font-[family-name:var(--font-mono)] text-[0.6875rem] uppercase tracking-[0.14em] text-[color:var(--copper)]">
+            Площадка
+          </legend>
           {PRESETS.map((preset) => {
             const active = selected === preset.id;
             return (
               <label
                 key={preset.id}
-                className={`flex items-center gap-3 rounded-md border px-3 py-2 text-[13px] transition-colors ${
+                className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-none border px-3 py-2 text-[0.875rem] transition-colors ${
                   active
-                    ? "border-[color:var(--gold)] bg-[color:var(--ink-2)]"
+                    ? "border-[color:var(--gold)] bg-[color:var(--ink-3)]"
                     : "border-[color:var(--line)] bg-transparent hover:border-[color:var(--mute)]"
                 }`}
               >
@@ -99,55 +83,32 @@ export function ExportDialog({ jobId, reelId, onClose }: Props) {
                   className="accent-[color:var(--gold)]"
                 />
                 <div className="flex flex-1 flex-col">
-                  <span className="text-[color:var(--paper)]">
-                    {preset.label}
-                  </span>
-                  <span className="mono text-[10px] uppercase tracking-[0.1em] text-[color:var(--mute-2)]">
+                  <span className="text-[color:var(--paper)]">{preset.label}</span>
+                  <span className="text-[0.75rem] text-[color:var(--mute-2)]">
                     {preset.hint}
                   </span>
                 </div>
               </label>
             );
           })}
-        </div>
-
-        {error && (
-          <p className="mt-3 text-[11px] text-[color:var(--danger)]">{error}</p>
-        )}
+        </fieldset>
 
         {downloadUrl && (
           <a
             href={downloadUrl}
             download
-            className="btn btn-primary mt-4 w-full justify-center"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-none border border-[color:var(--gold)] bg-[color:var(--gold)] text-[0.875rem] font-medium text-[color:var(--ink)] transition-colors hover:bg-[color:var(--accent-bright)]"
           >
             Скачать файл
           </a>
         )}
 
-        <div className="mt-5 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-[color:var(--line)] px-3 py-1.5 text-[12px] text-[color:var(--paper-dim)] transition-colors hover:text-[color:var(--paper)]"
-          >
-            Отмена
-          </button>
-          <button
-            type="button"
-            onClick={onExport}
-            disabled={loading}
-            className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? "Готовлю..." : "Подготовить"}
-          </button>
-        </div>
-
-        <p className="mt-3 text-[11px] leading-snug text-[color:var(--mute-2)]">
-          MVP: возвращает ссылку на существующий MP4 с метаданными пресета.
-          Full transcode по bitrate — в следующей итерации.
+        <p className="text-[0.75rem] leading-relaxed text-[color:var(--mute-2)]">
+          Отдаём готовый MP4 как есть — вертикаль 9:16, исходное качество.
+          Пресет задаёт только имя файла и шаблон подписи. Пере-кодирование
+          под площадку (битрейт, громкость) — в планах.
         </p>
       </div>
-    </div>
+    </Modal>
   );
 }

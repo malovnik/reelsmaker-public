@@ -116,7 +116,7 @@ export function BrandKitClient() {
                   onChange={(e) =>
                     setKit((prev) => ({ ...prev, [key]: e.target.value }))
                   }
-                  className="h-10 w-14 cursor-pointer rounded-md border border-[color:var(--line)] bg-transparent p-0.5"
+                  className="h-10 w-14 cursor-pointer rounded-none border border-[color:var(--line)] bg-transparent p-0.5"
                 />
                 <input
                   type="text"
@@ -125,7 +125,7 @@ export function BrandKitClient() {
                     setKit((prev) => ({ ...prev, [key]: e.target.value }))
                   }
                   spellCheck={false}
-                  className="flex-1 rounded-md border border-[color:var(--line)] bg-[color:var(--ink-2)] px-2 py-1.5 font-mono text-[11px] uppercase text-[color:var(--paper)] focus:border-[color:var(--gold)] focus:outline-none"
+                  className="flex-1 rounded-none border border-[color:var(--line)] bg-[color:var(--ink-2)] px-2 py-1.5 font-mono text-[11px] uppercase text-[color:var(--paper)] focus:border-[color:var(--gold)] focus:outline-none"
                 />
               </div>
             </label>
@@ -146,7 +146,7 @@ export function BrandKitClient() {
               setKit((prev) => ({ ...prev, font_family: e.target.value }))
             }
             placeholder="Inter, Montserrat, PT Sans..."
-            className="rounded-md border border-[color:var(--line)] bg-[color:var(--ink-2)] px-3 py-2 text-[13px] text-[color:var(--paper)] focus:border-[color:var(--gold)] focus:outline-none"
+            className="rounded-none border border-[color:var(--line)] bg-[color:var(--ink-2)] px-3 py-2 text-[13px] text-[color:var(--paper)] focus:border-[color:var(--gold)] focus:outline-none"
           />
           <span className="text-[11px] text-[color:var(--mute-2)]">
             Имя должно совпадать с пресетом шрифтов в настройках субтитров.
@@ -158,7 +158,7 @@ export function BrandKitClient() {
         <div className="divider">логотип</div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
           <div className="flex-1">
-            <label className="flex cursor-pointer flex-col items-start gap-2 rounded-md border border-dashed border-[color:var(--line)] bg-[color:var(--ink-2)] px-3 py-3 text-[12px] text-[color:var(--mute-2)] transition-colors hover:border-[color:var(--mute)]">
+            <label className="flex cursor-pointer flex-col items-start gap-2 rounded-none border border-dashed border-[color:var(--line)] bg-[color:var(--ink-2)] px-3 py-3 text-[12px] text-[color:var(--mute-2)] transition-colors hover:border-[color:var(--mute)]">
               <span>Выбрать PNG или JPG (до 1.5 МБ)</span>
               <input
                 type="file"
@@ -179,7 +179,7 @@ export function BrandKitClient() {
               <img
                 src={kit.logo_data_url}
                 alt="Логотип"
-                className="h-20 w-auto rounded-md border border-[color:var(--line)] bg-white p-1"
+                className="h-20 w-auto rounded-none border border-[color:var(--line)] bg-white p-1"
               />
               <button
                 type="button"
@@ -204,7 +204,7 @@ export function BrandKitClient() {
         <button
           type="button"
           onClick={onReset}
-          className="rounded-md border border-[color:var(--line)] px-4 py-2 text-[13px] text-[color:var(--paper-dim)] transition-colors hover:text-[color:var(--paper)]"
+          className="rounded-none border border-[color:var(--line)] px-4 py-2 text-[13px] text-[color:var(--paper-dim)] transition-colors hover:text-[color:var(--paper)]"
         >
           Сбросить
         </button>

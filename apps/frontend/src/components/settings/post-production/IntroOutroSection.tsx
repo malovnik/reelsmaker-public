@@ -35,7 +35,7 @@ export function IntroOutroSection({
           />
         </Field>
       </div>
-      <p className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+      <p className="mt-1 text-[11px] text-[color:var(--mute)]">
         Эти ролики добавляются в начало и конец каждого рилса после
         сборки. Файлы уже должны быть в нужном размере (1080×1920 для
         вертикального формата) — программа не меняет их разрешение.

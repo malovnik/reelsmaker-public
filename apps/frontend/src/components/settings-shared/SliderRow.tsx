@@ -1,54 +1,43 @@
-
+import { Slider } from "@/components/ui";
 import type { NumericProps } from "./NumberRow";
+import { resolveHint } from "./hintAdornment";
 
 /**
- * Слайдер-range input с меткой и подсказкой.
- *
- * Shared settings primitive. Используется как drop-in замена локальным
- * определениям в *SettingsClient.tsx (план Phase 8.3-8.6 декомпозиции).
+ * Ползунок с обязательной подсказкой (Эксперт-студия §2).
+ * `hintKey` → триплет what/effect/advise + бейдж из реестра; `hint` — fallback.
  */
 export function SliderRow({
   id,
   label,
+  hintKey,
   hint,
   value,
   min,
   max,
   step,
+  unit,
   disabled,
   onChange,
 }: NumericProps) {
+  const { inline, adornment, badgeNode } = resolveHint({ hintKey, hint });
   return (
-    <div className={disabled ? "opacity-50" : undefined}>
-      <div className="flex items-baseline justify-between gap-3">
-        <label
-          htmlFor={id}
-          className="text-sm text-[color:var(--text-primary)]"
-        >
+    <Slider
+      id={id}
+      label={
+        <span className="inline-flex items-center gap-2">
           {label}
-        </label>
-        <span className="font-mono text-sm tabular-nums text-[color:var(--text-secondary)]">
-          {value}
+          {badgeNode}
         </span>
-      </div>
-      <input
-        id={id}
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(Number(e.target.value))}
-        aria-describedby={`${id}-hint`}
-        className="mt-2 block w-full accent-[color:var(--accent-primary)] disabled:cursor-not-allowed"
-      />
-      <p
-        id={`${id}-hint`}
-        className="mt-1.5 text-xs text-[color:var(--text-muted)]"
-      >
-        {hint}
-      </p>
-    </div>
+      }
+      hint={inline}
+      adornment={adornment}
+      value={value}
+      min={min}
+      max={max}
+      step={step}
+      disabled={disabled}
+      formatValue={(v) => (unit ? `${v} ${unit}` : v)}
+      onValueChange={onChange}
+    />
   );
 }

@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { api, type ArtifactRead, type JobRead } from "@/lib/api";
+import { useConfirm, useToast } from "@/contexts";
 import { useJobSse } from "@/lib/sse";
 import { JobHero } from "@/components/job/JobHero";
 import { PipelineTimeline } from "@/components/job/PipelineTimeline";
@@ -15,25 +16,37 @@ interface Props {
 }
 
 export function JobDetailClient({ initialJob, initialArtifacts }: Props) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [job, setJob] = useState<JobRead>(initialJob);
   const [artifacts, setArtifacts] = useState<ArtifactRead[]>(initialArtifacts);
   const [cancelling, setCancelling] = useState(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
   const isActive = job.status === "running" || job.status === "pending";
   const sse = useJobSse(isActive ? job.id : null);
 
   async function handleCancel() {
     if (cancelling) return;
+    const ok = await confirm({
+      title: "Остановить обработку?",
+      description:
+        "Уже готовые рилсы сохранятся — пропадут только ещё не собранные. Остановку нельзя отменить.",
+      confirmLabel: "Остановить",
+      cancelLabel: "Продолжить",
+      destructive: true,
+    });
+    if (!ok) return;
     setCancelling(true);
-    setCancelError(null);
     try {
       const res = await api.cancelJob(job.id);
       setJob((prev) => ({
         ...prev,
         status: res.status as JobRead["status"],
       }));
+      toast.info("Обработка остановлена", {
+        detail: "Готовые рилсы остались в галерее.",
+      });
     } catch (err) {
-      setCancelError(`Не удалось отменить: ${String(err)}`);
+      toast.showError(err);
     } finally {
       setCancelling(false);
     }
@@ -93,7 +106,7 @@ export function JobDetailClient({ initialJob, initialArtifacts }: Props) {
         <div className="-mt-2 flex">
           <Link
             to={`/jobs/${job.id}/tinder`}
-            className="inline-flex items-center gap-2 rounded-full bg-[color:var(--accent-primary)] px-4 py-2 text-xs font-semibold text-[color:var(--accent-on-primary)] shadow-[var(--shadow-sm)] transition-colors hover:bg-[color:var(--accent-primary-hover)]"
+            className="inline-flex min-h-11 items-center gap-2 rounded-none border border-[color:var(--gold)] bg-transparent px-4 text-xs font-semibold text-[color:var(--gold)] transition-colors hover:bg-[color:var(--gold)] hover:text-[color:var(--ink)]"
           >
             <svg
               width="14"
@@ -109,64 +122,59 @@ export function JobDetailClient({ initialJob, initialArtifacts }: Props) {
         </div>
       )}
 
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-        <div className="surface-card p-5">
-          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
-            Этапы обработки
+      <section className="surface-card p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+            Конвейер обработки
           </h2>
-          <PipelineTimeline
-            currentStage={currentStage}
-            status={job.status}
-            progress={currentProgress}
-            message={currentMessage}
-            stageDurations={job.stage_durations}
-          />
           {isActive && (
-            <div className="mt-4 border-t border-[color:var(--line-soft)] pt-4">
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--danger,#b91c1c)] px-3 py-2 text-xs font-semibold text-[color:var(--danger,#b91c1c)] transition-colors hover:bg-[color:var(--danger,#b91c1c)]/10 disabled:opacity-50"
-              >
-                {cancelling ? "Отменяем…" : "Отменить обработку"}
-              </button>
-              {cancelError && (
-                <p className="mt-2 text-xs text-[color:var(--danger,#b91c1c)]">
-                  {cancelError}
-                </p>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-none border border-[color:var(--chi,#8B2500)] px-4 text-xs font-semibold text-[color:var(--chi,#8B2500)] transition-colors hover:bg-[color:var(--chi,#8B2500)] hover:text-[color:var(--paper)] disabled:opacity-50"
+            >
+              {cancelling ? "Останавливаем…" : "Отменить обработку"}
+            </button>
           )}
         </div>
+        <PipelineTimeline
+          currentStage={currentStage}
+          status={job.status}
+          progress={currentProgress}
+          message={currentMessage}
+          stageDurations={job.stage_durations}
+        />
+      </section>
 
-        <div className="flex flex-col gap-5">
-          {reels.length > 0 && <HeatmapBar job={job} reels={reels} />}
-          {reels.length > 0 ? (
-            <ReelGrid
-              jobId={job.id}
-              reels={reels}
-              onChange={(nextReels) => {
-                const otherKinds = artifacts.filter(
-                  (a) => a.kind !== "reel_output",
-                );
-                setArtifacts([...otherKinds, ...nextReels]);
-              }}
-            />
-          ) : (
-            <div className="surface-card flex flex-col items-center justify-center gap-2 border-dashed p-10 text-center">
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                {job.status === "error"
-                  ? "Обработка остановилась с ошибкой — рилсы не готовы."
-                  : job.status === "done"
-                    ? "Пайплайн завершился, но рилсы не нашлись в артефактах."
-                    : "Ещё идёт обработка — рилсы появятся на этапе «Сборка рилсов»."}
-              </p>
-            </div>
-          )}
+      {/* VD-02: галерея рилсов — герой экрана, во всю ширину контента (не
+          зажата в боковой 1fr). Внутри ReelGrid раскрывается до 6 колонок. */}
+      <section className="flex flex-col gap-5">
+        {reels.length > 0 && <HeatmapBar job={job} reels={reels} />}
+        {reels.length > 0 ? (
+          <ReelGrid
+            jobId={job.id}
+            reels={reels}
+            onChange={(nextReels) => {
+              const otherKinds = artifacts.filter(
+                (a) => a.kind !== "reel_output",
+              );
+              setArtifacts([...otherKinds, ...nextReels]);
+            }}
+          />
+        ) : (
+          <div className="surface-card flex flex-col items-center justify-center gap-2 border-dashed p-10 text-center">
+            <p className="text-sm text-[color:var(--text-secondary)]">
+              {job.status === "error"
+                ? "Обработка остановилась с ошибкой — рилсы не готовы."
+                : job.status === "done"
+                  ? "Пайплайн завершился, но рилсы не нашлись в артефактах."
+                  : "Ещё идёт обработка — рилсы появятся на этапе «Сборка рилсов»."}
+            </p>
+          </div>
+        )}
 
-          <ArtifactsAccordion jobId={job.id} artifacts={auxiliaryArtifacts} />
-        </div>
+        <ArtifactsAccordion jobId={job.id} artifacts={auxiliaryArtifacts} />
       </section>
     </div>
   );

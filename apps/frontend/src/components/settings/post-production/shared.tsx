@@ -10,7 +10,7 @@ export function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[color:var(--text-muted)]">
+      <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[color:var(--mute)]">
         {label}
       </span>
       {children}
@@ -20,16 +20,22 @@ export function Field({
 
 export function Section({
   title,
+  aside,
   children,
 }: {
   title: string;
+  /** Опц. узел справа от заголовка — honesty-бейдж + (i)-подсказка. */
+  aside?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-sunken)] p-4">
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
-        {title}
-      </h3>
+    <div className="flex flex-col gap-3 rounded-none border border-[color:var(--line)] bg-[color:var(--ink-3)] p-4">
+      <div className="flex items-center gap-2">
+        <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--mute)]">
+          {title}
+        </h3>
+        {aside}
+      </div>
       {children}
     </div>
   );
@@ -45,12 +51,12 @@ export function Toggle({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-sm text-[color:var(--text-primary)]">
+    <label className="flex cursor-pointer items-center gap-2 text-sm text-[color:var(--paper)]">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="size-4 accent-[color:var(--accent-primary)]"
+        className="size-4 accent-[color:var(--gold)]"
       />
       {label}
     </label>
@@ -81,7 +87,7 @@ export function NumberField({
         max={max}
         step={step}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full rounded-lg border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--accent-primary)]"
+        className="w-full rounded-none border border-[color:var(--line)] bg-[color:var(--ink)] px-3 py-2 text-sm text-[color:var(--paper)] outline-none focus:border-[color:var(--gold)]"
       />
     </Field>
   );
@@ -103,7 +109,7 @@ export function AssetSelect({
         const raw = e.target.value;
         onChange(raw === "" ? null : Number(raw));
       }}
-      className="w-full rounded-lg border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--accent-primary)]"
+      className="w-full rounded-none border border-[color:var(--line)] bg-[color:var(--ink)] px-3 py-2 text-sm text-[color:var(--paper)] outline-none focus:border-[color:var(--gold)]"
     >
       <option value="">— не использовать —</option>
       {assets.map((a) => (

@@ -2,6 +2,7 @@
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "@/lib/router-compat";
 import { api, type ArtifactRead } from "@/lib/api";
+import { useToast } from "@/contexts";
 import {
   computeViralScore,
   viralInputFromMeta,
@@ -28,6 +29,7 @@ const FILTER_META: Record<ReelFilter, { label: string; hint: string }> = {
 const FILTER_ORDER: ReelFilter[] = ["all", "top", "short", "long", "like", "dislike"];
 
 export function ReelGrid({ jobId, reels, onChange }: Props) {
+  const toast = useToast();
   const router = useRouter();
   const [searchParams] = useSearchParams();
   const filterParam = searchParams.get("filter");
@@ -48,7 +50,6 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
 
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [isPending, startTransition] = useTransition();
-  const [lastError, setLastError] = useState<string | null>(null);
 
   const selectedCount = selected.size;
   const hasSelection = selectedCount > 0;
@@ -77,7 +78,6 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
   const deleteOne = useCallback(
     (id: number) => {
       startTransition(async () => {
-        setLastError(null);
         try {
           await api.deleteArtifact(jobId, id);
           onChange(reels.filter((r) => r.id !== id));
@@ -88,46 +88,32 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
             return next;
           });
         } catch (exc) {
-          setLastError(
-            exc instanceof Error ? exc.message : "Не получилось удалить рилс.",
-          );
+          toast.showError(exc);
         }
       });
     },
-    [jobId, onChange, reels],
+    [jobId, onChange, reels, toast],
   );
-
-  const [lastSaved, setLastSaved] = useState<{
-    folder: string;
-    count: number;
-  } | null>(null);
 
   const saveSelected = useCallback(() => {
     if (selected.size === 0) return;
     const ids = [...selected];
     startTransition(async () => {
-      setLastError(null);
       try {
         const summary = await api.saveReels(jobId, ids);
-        setLastSaved({
-          folder: summary.folder,
-          count: summary.copied_files,
+        toast.success(`Сохранено ${summary.copied_files} файлов`, {
+          detail: `Папка saved/${summary.folder}/`,
         });
       } catch (exc) {
-        setLastError(
-          exc instanceof Error
-            ? exc.message
-            : "Не получилось сохранить подборку.",
-        );
+        toast.showError(exc);
       }
     });
-  }, [jobId, selected]);
+  }, [jobId, selected, toast]);
 
   const deleteSelected = useCallback(() => {
     if (selected.size === 0) return;
     const ids = [...selected];
     startTransition(async () => {
-      setLastError(null);
       const failures: number[] = [];
       await Promise.all(
         ids.map(async (id) => {
@@ -142,12 +128,15 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
       onChange(reels.filter((r) => failedSet.has(r.id) || !selected.has(r.id)));
       setSelected(failedSet);
       if (failures.length > 0) {
-        setLastError(
-          `Не получилось удалить ${failures.length} из ${ids.length} — попробуй ещё раз.`,
+        toast.error(
+          `Не удалили ${failures.length} из ${ids.length}`,
+          { detail: "Часть рилсов осталась — попробуй ещё раз." },
         );
+      } else {
+        toast.success(`Удалили ${ids.length} рилсов`);
       }
     });
-  }, [jobId, onChange, reels, selected]);
+  }, [jobId, onChange, reels, selected, toast]);
 
   const counts = useMemo<Record<ReelFilter, number>>(() => {
     const base: Record<ReelFilter, number> = {
@@ -248,31 +237,14 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
         })}
       </div>
 
-      {lastError && (
-        <div
-          role="alert"
-          className="mb-3 rounded-lg border border-[color:var(--danger)] bg-[color:var(--danger)]/10 px-3 py-2 text-xs text-[color:var(--danger)]"
-        >
-          {lastError}
-        </div>
-      )}
-
-      {lastSaved && (
-        <div
-          role="status"
-          className="mb-3 rounded-lg border border-[color:var(--success)] bg-[color:var(--success)]/10 px-3 py-2 text-xs text-[color:var(--success)]"
-        >
-          Сохранено {lastSaved.count} файлов в{" "}
-          <span className="font-mono">saved/{lastSaved.folder}/</span>
-        </div>
-      )}
-
       {filteredReels.length === 0 ? (
         <div className="surface-card p-10 text-center text-sm text-[color:var(--text-secondary)]">
           В этой категории — никого. Открой «Все», там вся подборка.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        // VD-02: рилсы 9:16 узкие — раскрываем галерею до 6 колонок на широких
+        // экранах (1400px+). Плавная прогрессия 2→3→4→5→6.
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5 2xl:grid-cols-6">
           {filteredReels.map((artifact) => (
             <ReelCard
               key={artifact.id}

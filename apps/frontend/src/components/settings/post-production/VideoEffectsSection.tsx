@@ -18,7 +18,7 @@ export function VideoEffectsSection({ config, onConfigChange }: Props) {
         checked={config.bw_enabled}
         onChange={(v) => onConfigChange("bw_enabled", v)}
       />
-      <p className="text-[11px] text-[color:var(--text-muted)]">
+      <p className="text-[11px] text-[color:var(--mute)]">
         Полное обесцвечивание с сохранением мягких тональных
         переходов — без полос и артефактов.
       </p>

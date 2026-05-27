@@ -29,10 +29,16 @@ export function NarrativeModeGroup({ values, update }: GroupProps) {
   const current = (raw === "chaptered" ? "bottom_up" : raw) as NarrativeMode;
 
   return (
-    <Group title="Архитектура сборки рилсов">
-      <p className="text-xs text-[color:var(--text-muted)]">
-        Три архитектуры на выбор. Default bottom_up — не меняет существующий
-        pipeline. Для тестов OpusClip-quality переключайся на map_reduce.
+    <Group title="Архитектура сборки рилсов" hintKey="narrative_mode">
+      {raw === "chaptered" && (
+        <p className="rounded-none border border-l-2 border-[var(--line)] border-l-[var(--danger)] bg-[var(--ink)] px-3 py-2 text-[0.8125rem] leading-snug text-[var(--mute)]">
+          Сохранённый режим «по главам» помечен как нерабочий и заменён на
+          Bottom-up. Выберите рабочую архитектуру ниже.
+        </p>
+      )}
+      <p className="text-[0.8125rem] leading-snug text-[var(--mute)]">
+        Три архитектуры на выбор. Bottom-up по умолчанию не меняет существующий
+        конвейер. Для плотной нарезки в стиле OpusClip берите Map-Reduce.
       </p>
       <div className="flex flex-col gap-3">
         {(Object.keys(NARRATIVE_MODE_META) as NarrativeMode[]).map((mode) => {
@@ -41,10 +47,10 @@ export function NarrativeModeGroup({ values, update }: GroupProps) {
           return (
             <label
               key={mode}
-              className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-4 transition-colors ${
+              className={`flex cursor-pointer flex-col gap-1 rounded-none border p-4 transition-colors ${
                 checked
-                  ? "border-[color:var(--accent)] bg-[color:var(--surface-accent)]"
-                  : "border-[color:var(--border-subtle)] bg-[color:var(--surface)] hover:border-[color:var(--border)]"
+                  ? "border-[var(--gold)] bg-[var(--ink-3)]"
+                  : "border-[var(--line)] bg-[var(--ink)] hover:border-[var(--mute)]"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -53,13 +59,13 @@ export function NarrativeModeGroup({ values, update }: GroupProps) {
                   name="narrative_mode"
                   checked={checked}
                   onChange={() => update("narrative_mode", mode)}
-                  className="h-4 w-4"
+                  className="h-4 w-4 accent-[var(--gold)]"
                 />
-                <span className="text-sm font-medium text-[color:var(--text-primary)]">
+                <span className="text-[0.9375rem] font-medium text-[var(--paper)]">
                   {meta.label}
                 </span>
               </div>
-              <p className="pl-7 text-xs text-[color:var(--text-muted)]">
+              <p className="pl-7 text-[0.8125rem] leading-snug text-[var(--mute)]">
                 {meta.hint}
               </p>
             </label>
@@ -68,15 +74,15 @@ export function NarrativeModeGroup({ values, update }: GroupProps) {
       </div>
 
       {current === "map_reduce" && (
-        <div className="mt-4 flex flex-col gap-3 border-t border-[color:var(--border-subtle)] pt-4">
-          <p className="text-xs text-[color:var(--text-muted)]">
-            Настройки Map-Reduce pipeline. Разумные дефолты из research
-            OpusClip 2026 — тюнь только если видишь проблемы.
+        <div className="mt-4 flex flex-col gap-3 border-t border-[var(--line)] pt-4">
+          <p className="text-[0.8125rem] leading-snug text-[var(--mute)]">
+            Настройки конвейера Map-Reduce. Дефолты подобраны под talking-head —
+            трогайте, только если видите проблемы.
           </p>
           <NumberRow
             id="narrative_chunk_size_chars"
-            label="Размер chunk'а (символов)"
-            hint="20000 ≈ 20 минут talking-head речи. Меньше — теряется контекст арки, больше — Flash Lite context rot."
+            label="Размер куска (символов)"
+            hintKey="narrative_chunk_size_chars"
             value={values.narrative_chunk_size_chars ?? 20000}
             onChange={(v) => update("narrative_chunk_size_chars", v)}
             min={5000}
@@ -85,8 +91,8 @@ export function NarrativeModeGroup({ values, update }: GroupProps) {
           />
           <NumberRow
             id="narrative_chunk_overlap_chars"
-            label="Overlap между chunks (символов)"
-            hint="Перекрытие для catch'а clips с hook/payoff на границе. Dedup по timestamps downstream."
+            label="Перекрытие кусков (символов)"
+            hintKey="narrative_chunk_overlap_chars"
             value={values.narrative_chunk_overlap_chars ?? 2000}
             onChange={(v) => update("narrative_chunk_overlap_chars", v)}
             min={500}
@@ -95,8 +101,8 @@ export function NarrativeModeGroup({ values, update }: GroupProps) {
           />
           <NumberRow
             id="narrative_clips_per_chunk_target"
-            label="Density-prior (clips на chunk)"
-            hint="Сколько clips LLM должен искать в одном 20K chunk'е. OpusClip observed 12-18. Floor, не cap."
+            label="Моментов на кусок"
+            hintKey="narrative_clips_per_chunk_target"
             value={values.narrative_clips_per_chunk_target ?? 15}
             onChange={(v) => update("narrative_clips_per_chunk_target", v)}
             min={5}
@@ -105,8 +111,8 @@ export function NarrativeModeGroup({ values, update }: GroupProps) {
           />
           <NumberRow
             id="narrative_chunk_parallel_max"
-            label="Parallel LLM calls max"
-            hint="Rate limit guard. Gemini Tier 1 = 300 RPM — 10 parallel × 3 videos/min fits."
+            label="Кусков одновременно"
+            hintKey="narrative_chunk_parallel_max"
             value={values.narrative_chunk_parallel_max ?? 10}
             onChange={(v) => update("narrative_chunk_parallel_max", v)}
             min={1}

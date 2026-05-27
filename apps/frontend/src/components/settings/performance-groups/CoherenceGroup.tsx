@@ -31,10 +31,10 @@ function CoherenceModeRow({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col">
-        <span className="text-sm text-[color:var(--text-primary)]">
+        <span className="text-sm text-[color:var(--paper)]">
           Что делать с рилсами, где hook и финал расходятся
         </span>
-        <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+        <p className="mt-1 text-xs text-[color:var(--mute)]">
           После сборки каждый рилс проверяется на связность. Эта настройка
           решает, что делать с рассогласованными кандидатами.
         </p>
@@ -54,18 +54,18 @@ function CoherenceModeRow({
               role="radio"
               aria-checked={active}
               onClick={() => onChange(mode)}
-              className={`flex flex-col items-start gap-1 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent-primary)] ${
+              className={`flex flex-col items-start gap-1 rounded-none border px-3 py-2.5 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--gold)] ${
                 active
-                  ? "border-[color:var(--accent-primary)] bg-[color:var(--accent-primary-subtle)] text-[color:var(--accent-primary-hover)]"
-                  : "border-[color:var(--border-default)] bg-[color:var(--surface-raised)] text-[color:var(--text-secondary)] hover:border-[color:var(--text-primary)] hover:text-[color:var(--text-primary)]"
+                  ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-[color:var(--gold-dim)]"
+                  : "border-[color:var(--line)] bg-[color:var(--ink)] text-[color:var(--mute-2)] hover:border-[color:var(--paper)] hover:text-[color:var(--paper)]"
               }`}
             >
               <span className="text-sm font-medium">{meta.label}</span>
               <span
                 className={`text-[11px] leading-snug ${
                   active
-                    ? "text-[color:var(--accent-primary)]"
-                    : "text-[color:var(--text-muted)]"
+                    ? "text-[color:var(--gold)]"
+                    : "text-[color:var(--mute)]"
                 }`}
               >
                 {meta.hint}
@@ -98,7 +98,7 @@ function ThresholdAdvice({
       {severity === "warn" && (
         <div
           role="alert"
-          className="rounded-lg border border-[color:var(--warning)] bg-[color:var(--warning)]/10 px-3 py-2 text-xs leading-snug text-[color:var(--warning)]"
+          className="rounded-none border border-[color:var(--warning)] bg-[color:var(--warning)]/10 px-3 py-2 text-xs leading-snug text-[color:var(--warning)]"
         >
           Строгий порог — возможна потеря 30–50 % рилсов в режиме отбрасывания.
         </div>
@@ -106,12 +106,12 @@ function ThresholdAdvice({
       {severity === "danger" && (
         <div
           role="alert"
-          className="rounded-lg border border-[color:var(--danger)] bg-[color:var(--danger)]/10 px-3 py-2 text-xs leading-snug text-[color:var(--danger)]"
+          className="rounded-none border border-[color:var(--danger)] bg-[color:var(--danger)]/10 px-3 py-2 text-xs leading-snug text-[color:var(--danger)]"
         >
           Очень строгий порог — почти все рилсы могут быть отброшены.
         </div>
       )}
-      <p className="text-[11px] leading-snug text-[color:var(--text-muted)]">
+      <p className="text-[11px] leading-snug text-[color:var(--mute)]">
         {recommendation}
       </p>
     </div>

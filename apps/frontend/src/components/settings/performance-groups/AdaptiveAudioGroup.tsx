@@ -44,7 +44,7 @@ export function AdaptiveAudioGroup({ values, update, onReset }: Props) {
       <button
         type="button"
         onClick={onReset}
-        className="self-start text-xs text-[color:var(--accent-primary)] underline-offset-2 hover:underline"
+        className="self-start text-xs text-[color:var(--gold)] underline-offset-2 hover:underline"
       >
         Вернуть стандартные значения
       </button>

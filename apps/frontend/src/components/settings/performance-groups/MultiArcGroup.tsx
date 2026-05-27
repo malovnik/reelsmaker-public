@@ -15,20 +15,19 @@ export function MultiArcGroup({ values, update }: GroupProps) {
 
   return (
     <Group title="Multi-arc режим (variant A)">
-      <p className="text-xs text-[color:var(--text-muted)]">
-        Для каждого candidate_moment из canvas строится отдельный arc по
-        evidence в окне ±window_sec. По умолчанию выключено — работает
-        legacy single-arc flow без изменений.
+      <p className="text-[0.8125rem] leading-snug text-[var(--mute)]">
+        Для каждого ключевого момента строится отдельная сюжетная арка.
+        По умолчанию выключено — работает обычная единая сборка.
       </p>
       <SwitchRow
         id="multi_arc_enabled"
-        label="Включить arc per canvas moment"
-        hint="Когда выключено — используется legacy single-arc composer."
+        label="Своя арка на каждый момент"
+        hintKey="multi_arc_builder"
         checked={enabled}
         onChange={(v) => update("multi_arc_enabled", v)}
       />
       {enabled && (
-        <div className="mt-4 flex flex-col gap-4 border-t border-[color:var(--border-subtle)] pt-4">
+        <div className="mt-4 flex flex-col gap-4 border-t border-[var(--line)] pt-4">
           <NumberRow
             id="multi_arc_window_sec"
             label="Окно evidence вокруг момента"

@@ -77,7 +77,7 @@ export function SettingsSubNav() {
             to={item.href}
             aria-current={active ? "page" : undefined}
             className={[
-              "group flex items-start gap-3 rounded-[4px] px-[10px] py-[10px] transition-colors duration-150",
+              "group flex items-start gap-3 rounded-none px-[10px] py-[10px] transition-colors duration-150",
               active
                 ? "bg-[color:var(--ink-2)] text-[color:var(--paper)]"
                 : "text-[color:var(--mute-2)] hover:bg-[color:var(--ink-2)] hover:text-[color:var(--paper)]",

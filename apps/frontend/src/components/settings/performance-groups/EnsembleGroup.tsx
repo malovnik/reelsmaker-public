@@ -7,8 +7,8 @@ export function EnsembleGroup({ values, update }: GroupProps) {
     <Group title="Ансамбль судей (точность ранжирования)">
       <NumberRow
         id="reducer_ensemble_size"
-        label="Сколько судей голосует за рил"
-        hint="1 — обычный режим, один LLM-вызов. 3-5 — параллельные вызовы с разной температурой, медиана-оценка + вето (рил попадает только если за него хотя бы N голосов). Стоимость растёт в N раз, точность по Q4/RewardBench 2 выше на 7-10 процентных пунктов."
+        label="Сколько судей голосует за рилс"
+        hintKey="reducer_ensemble"
         value={values.reducer_ensemble_size}
         min={1}
         max={5}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { NavRail } from "./NavRail";
 import { TopBar } from "./TopBar";
+import { Onboarding } from "./Onboarding";
 
 interface Props {
   children: ReactNode;
@@ -39,6 +40,7 @@ export function AppShell({ children }: Props) {
         <TopBar onOpenNav={openNav} />
         <div className="flex-1">{children}</div>
       </div>
+      <Onboarding />
     </div>
   );
 }

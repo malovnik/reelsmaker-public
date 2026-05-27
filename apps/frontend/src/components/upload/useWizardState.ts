@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   api,
-  ApiError,
   type AutoAnalyzeResponse,
   type ComposerStrategy,
   type FitMode,
@@ -17,12 +16,21 @@ import {
 } from "@/lib/api";
 import { extractVideoThumbnail } from "@/lib/video-thumbnail";
 import { useJobSse, type UseJobSseResult } from "@/lib/sse";
+import { humanizeError, type HumanError } from "@/lib/humanizeError";
 
 export const ASPECTS = ["9:16", "1:1", "4:5", "16:9"] as const;
 export type Aspect = (typeof ASPECTS)[number];
 
 export const REEL_COUNT_MIN = 3;
 export const REEL_COUNT_MAX = 225;
+
+/**
+ * Вид нарезки в человеческих именах (Пошаговый режим). `chaptered` намеренно
+ * не входит — author-marked broken, новичку не показываем. Сохраняется в
+ * глобальные performance-настройки на запуске (narrative_mode там, не в POST /jobs).
+ */
+export const NARRATIVE_MODES = ["bottom_up", "map_reduce", "viral_2026"] as const;
+export type NarrativeMode = (typeof NARRATIVE_MODES)[number];
 
 export interface UseWizardStateOptions {
   models: ModelsInfo;
@@ -37,7 +45,11 @@ export interface WizardState {
   sourceThumbnailDataUrl: string | null;
   uploading: boolean;
   jobId: string | null;
-  error: string | null;
+  /** Человеко-понятная ошибка (humanizeError), а не сырой JSON. */
+  error: HumanError | null;
+  cancelling: boolean;
+  narrativeMode: NarrativeMode;
+  subtitlesOff: boolean;
   pipelineMode: "auto" | "manual";
   autoAnalyzing: boolean;
   autoAnalysis: AutoAnalyzeResponse | null;
@@ -71,7 +83,15 @@ export interface WizardState {
 export interface WizardActions {
   applySelectedFile: (picked: File) => void;
   clearSelectedFile: () => void;
-  setError: (message: string | null) => void;
+  setError: (error: HumanError | null) => void;
+  /** Установить ошибку из брошенного исключения (humanizeError). */
+  failWith: (err: unknown) => void;
+  setNarrativeMode: (m: NarrativeMode) => void;
+  setSubtitlesOff: (v: boolean) => void;
+  /** Отменить активный джоб (POST /jobs/{id}/cancel). */
+  cancel: () => Promise<void>;
+  /** Полный сброс цепочки — новый проект с чистого листа. */
+  reset: () => void;
   setPipelineMode: (m: "auto" | "manual") => void;
   setProjectId: (id: number | null) => void;
   applyProfileSuggestion: () => Promise<void>;
@@ -115,7 +135,16 @@ export function useWizardState(
   >(null);
   const [uploading, setUploading] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<HumanError | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const failWith = useCallback((err: unknown) => {
+    setError(humanizeError(err));
+  }, []);
+
+  // S3 Пошагового: вид нарезки. Дефолт «Режиссёрский» (bottom_up).
+  const [narrativeMode, setNarrativeMode] = useState<NarrativeMode>("bottom_up");
+  // S4: чекбокс «Без субтитров».
+  const [subtitlesOff, setSubtitlesOff] = useState(false);
 
   const [pipelineMode, setPipelineMode] = useState<"auto" | "manual">("auto");
   const [autoAnalyzing, setAutoAnalyzing] = useState(false);
@@ -273,7 +302,7 @@ export function useWizardState(
     form.append("target_aspect", aspect);
     form.append("fit_mode", fitMode);
     form.append("source_language", sourceLang);
-    if (subtitlePresetId !== null) {
+    if (!subtitlesOff && subtitlePresetId !== null) {
       form.append("subtitle_style_preset_id", String(subtitlePresetId));
     }
     if (postProductionPresetId !== null) {
@@ -312,6 +341,21 @@ export function useWizardState(
       form.append("split_screen_enabled", String(splitScreenOverride));
     }
     try {
+      // narrative_mode живёт в глобальных perf-настройках (не в POST /jobs).
+      // Применяем выбор Пошагового до создания джоба — читаем текущие
+      // настройки, патчим одно поле, пишем обратно. Best-effort: если
+      // настройки недоступны, пайплайн использует прежний режим.
+      try {
+        const perf = await api.getPerformanceSettings();
+        if (perf.narrative_mode !== narrativeMode) {
+          await api.updatePerformanceSettings({
+            ...perf,
+            narrative_mode: narrativeMode,
+          });
+        }
+      } catch (perfErr) {
+        console.error("narrative_mode update failed", perfErr);
+      }
       const job = await api.createJob(form);
       setJobId(job.id);
       // R2.1 — связываем джоб с выбранным проектом (POST /jobs не принимает
@@ -351,16 +395,14 @@ export function useWizardState(
         onJobCreated(job.id);
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(`Ошибка ${err.status}: ${JSON.stringify(err.detail)}`);
-      } else {
-        setError(String(err));
-      }
+      setError(humanizeError(err));
     } finally {
       setUploading(false);
     }
   }, [
     file,
+    narrativeMode,
+    subtitlesOff,
     transcriber,
     provider,
     llmModel,
@@ -391,40 +433,35 @@ export function useWizardState(
       setVisionProfile(profileSuggestion.profile);
       setProfileSuggestionApplied(true);
     } catch (err) {
-      setError(`Не удалось применить рекомендованный профиль: ${String(err)}`);
+      setError(humanizeError(err));
     }
   }, [jobId, profileSuggestion]);
 
   const acceptAutoConfig = useCallback(async () => {
     if (!jobId || !autoAnalysis) return;
     try {
-      await fetch(`/api/v1/jobs/${jobId}/auto-config`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pacing_profile: autoAnalysis.pacing_profile,
-          snap_strategy: autoAnalysis.snap_strategy,
-          pause_compression_enabled: autoAnalysis.pause_compression_enabled,
-          pause_compression_threshold_sec:
-            autoAnalysis.pause_compression_threshold_sec,
-          pause_compression_keep_sec: autoAnalysis.pause_compression_keep_sec,
-          breath_compression_enabled: autoAnalysis.breath_compression_enabled,
-          filler_words_removal_enabled:
-            autoAnalysis.filler_words_removal_enabled,
-          punchline_pause_enabled: autoAnalysis.punchline_pause_enabled,
-          punchline_hold_after_sec: autoAnalysis.punchline_hold_after_sec,
-          punch_in_zoom_enabled: autoAnalysis.punch_in_zoom_enabled,
-          punch_in_zoom_scale: autoAnalysis.punch_in_zoom_scale,
-          punch_in_zoom_probability: autoAnalysis.punch_in_zoom_probability,
-          ken_burns_drift_enabled: autoAnalysis.ken_burns_drift_enabled,
-          ken_burns_scale_per_sec: autoAnalysis.ken_burns_scale_per_sec,
-          coherence_threshold: autoAnalysis.coherence_threshold,
-          rhythm_aware_cuts_enabled: autoAnalysis.rhythm_aware_cuts_enabled,
-        }),
+      await api.applyAutoConfig(jobId, {
+        pacing_profile: autoAnalysis.pacing_profile,
+        snap_strategy: autoAnalysis.snap_strategy,
+        pause_compression_enabled: autoAnalysis.pause_compression_enabled,
+        pause_compression_threshold_sec:
+          autoAnalysis.pause_compression_threshold_sec,
+        pause_compression_keep_sec: autoAnalysis.pause_compression_keep_sec,
+        breath_compression_enabled: autoAnalysis.breath_compression_enabled,
+        filler_words_removal_enabled: autoAnalysis.filler_words_removal_enabled,
+        punchline_pause_enabled: autoAnalysis.punchline_pause_enabled,
+        punchline_hold_after_sec: autoAnalysis.punchline_hold_after_sec,
+        punch_in_zoom_enabled: autoAnalysis.punch_in_zoom_enabled,
+        punch_in_zoom_scale: autoAnalysis.punch_in_zoom_scale,
+        punch_in_zoom_probability: autoAnalysis.punch_in_zoom_probability,
+        ken_burns_drift_enabled: autoAnalysis.ken_burns_drift_enabled,
+        ken_burns_scale_per_sec: autoAnalysis.ken_burns_scale_per_sec,
+        coherence_threshold: autoAnalysis.coherence_threshold,
+        rhythm_aware_cuts_enabled: autoAnalysis.rhythm_aware_cuts_enabled,
       });
       if (onJobCreated) onJobCreated(jobId);
     } catch (err) {
-      setError(`Не удалось применить AutoConfig: ${String(err)}`);
+      setError(humanizeError(err));
     }
   }, [jobId, autoAnalysis, onJobCreated]);
 
@@ -434,12 +471,49 @@ export function useWizardState(
     if (jobId && onJobCreated) onJobCreated(jobId);
   }, [jobId, onJobCreated]);
 
+  const cancel = useCallback(async () => {
+    if (!jobId) return;
+    setCancelling(true);
+    try {
+      await api.cancelJob(jobId);
+      if (onJobCreated) onJobCreated(jobId);
+    } catch (err) {
+      setError(humanizeError(err));
+    } finally {
+      setCancelling(false);
+    }
+  }, [jobId, onJobCreated]);
+
+  // Полный сброс цепочки — «Завершить» / «Новый проект». Возвращает форму к
+  // дефолтам, чтобы Пошаговый стартовал с чистого СТАРТ-экрана.
+  const reset = useCallback(() => {
+    setFile(null);
+    setSourceThumbnailDataUrl(null);
+    setJobId(null);
+    setError(null);
+    setUploading(false);
+    setCancelling(false);
+    setAutoAnalysis(null);
+    setAutoAnalyzing(false);
+    setPipelineMode("auto");
+    setProjectId(null);
+    setProfileSuggestion(null);
+    setProfileSuggestionApplied(false);
+    setNarrativeMode("bottom_up");
+    setSubtitlesOff(false);
+    setReelCountMode("auto");
+    setOverrides({});
+  }, []);
+
   const state: WizardState = {
     file,
     sourceThumbnailDataUrl,
     uploading,
     jobId,
     error,
+    cancelling,
+    narrativeMode,
+    subtitlesOff,
     pipelineMode,
     autoAnalyzing,
     autoAnalysis,
@@ -474,6 +548,11 @@ export function useWizardState(
     applySelectedFile,
     clearSelectedFile,
     setError,
+    failWith,
+    setNarrativeMode,
+    setSubtitlesOff,
+    cancel,
+    reset,
     setPipelineMode,
     setProjectId,
     applyProfileSuggestion,

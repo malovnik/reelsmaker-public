@@ -8,7 +8,7 @@ export function CrossChunkGroup({ values, update }: GroupProps) {
       <SwitchRow
         id="cross_chunk_reducer_enabled"
         label="Дополнительная проверка согласованности"
-        hint="После сбора кандидатов со всех смысловых частей запускаем ещё один проход Flash Lite. Он отбрасывает рилсы, которые противоречат общему контексту (напр. повторяют тезис из другого chunk'а с обратным смыслом). Стоит ~1 дешёвого вызова на видео."
+        hintKey="cross_chunk_reducer"
         checked={values.cross_chunk_reducer_enabled}
         onChange={(v) => update("cross_chunk_reducer_enabled", v)}
       />

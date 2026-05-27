@@ -8,7 +8,7 @@ export function FillerRemovalGroup({ values, update }: GroupProps) {
       <SwitchRow
         id="filler_removal_enabled"
         label="Вырезать «эм», «ну», «вот», «типа», «um», «uh»"
-        hint="Используем список филлеров из транскрипта и точные границы слов от stable-ts. Срез ±30 мс вокруг слова — чтобы убрать призвук."
+        hintKey="filler_removal"
         checked={values.filler_removal_enabled}
         onChange={(v) => update("filler_removal_enabled", v)}
       />

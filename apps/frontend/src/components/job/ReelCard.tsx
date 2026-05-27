@@ -1,7 +1,8 @@
 
 import { Link } from "react-router-dom";
-import { useState, useTransition } from "react";
+import { memo, useState, useTransition } from "react";
 import { api, type ArtifactRead } from "@/lib/api";
+import { useConfirm, useToast } from "@/contexts";
 import {
   computeViralScore,
   viralInputFromMeta,
@@ -21,7 +22,7 @@ interface Props {
   busy?: boolean;
 }
 
-export function ReelCard({
+function ReelCardImpl({
   jobId,
   artifact,
   onUpdate,
@@ -30,6 +31,8 @@ export function ReelCard({
   onDelete,
   busy = false,
 }: Props) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [showBreakdown, setShowBreakdown] = useState(false);
   const meta = artifact.meta as Record<string, unknown>;
   const reelId = String(meta.reel_id ?? artifact.id);
@@ -58,8 +61,9 @@ export function ReelCard({
       try {
         const updated = await api.updateArtifactLike(jobId, artifact.id, next);
         if (onUpdate) onUpdate(updated);
-      } catch {
+      } catch (exc) {
         setLiked(previous);
+        toast.showError(exc);
       }
     });
   }
@@ -94,7 +98,12 @@ export function ReelCard({
         )}
         <LikeOverlay liked={liked} onChange={pushLike} disabled={disabled} />
         {onDelete && (
-          <DeleteButton onDelete={onDelete} disabled={disabled} reelId={reelId} />
+          <DeleteButton
+            onDelete={onDelete}
+            disabled={disabled}
+            reelId={reelId}
+            confirm={confirm}
+          />
         )}
       </div>
 
@@ -187,6 +196,14 @@ export function ReelCard({
   );
 }
 
+/**
+ * memo: галерея рилсов растёт до 33+ карточек, а SSE-каскад на детали джоба
+ * перерисовывает родителя каждые ~1с. Без memo каждый кадр прогресса
+ * перемонтировал бы все <video>. Перерисовываем карточку только когда меняются
+ * её собственные пропсы.
+ */
+export const ReelCard = memo(ReelCardImpl);
+
 function CrossContextBadge({ risk }: { risk: number }) {
   const percent = Math.round(risk * 100);
   return (
@@ -233,17 +250,20 @@ function LikeOverlay({
   onChange: (state: LikeState) => void;
   disabled: boolean;
 }) {
+  // VD-03: like/dislike видны ВСЕГДА (primary-действие рилса). На тач —
+  // постоянная панель; на десктопе ничего не прячем, потому что это главное
+  // действие галереи. Таргет 44px (size-11).
   return (
-    <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+    <div className="absolute left-2 top-2 flex flex-col gap-2">
       <button
         type="button"
         onClick={() => onChange(liked === "like" ? "none" : "like")}
         disabled={disabled}
         aria-pressed={liked === "like"}
         aria-label={liked === "like" ? "Снять лайк" : "Лайк"}
-        className={`pointer-events-auto flex size-9 items-center justify-center rounded-full border backdrop-blur-md transition-all ${
+        className={`flex size-11 items-center justify-center rounded-none border backdrop-blur-md transition-colors disabled:opacity-50 ${
           liked === "like"
-            ? "border-white/40 bg-[color:var(--accent-primary)] text-white shadow-lg"
+            ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-[color:var(--ink)] shadow-lg"
             : "border-white/15 bg-black/55 text-white hover:bg-black/75"
         }`}
       >
@@ -255,9 +275,9 @@ function LikeOverlay({
         disabled={disabled}
         aria-pressed={liked === "dislike"}
         aria-label={liked === "dislike" ? "Убрать дизлайк" : "Дизлайк"}
-        className={`pointer-events-auto flex size-9 items-center justify-center rounded-full border backdrop-blur-md transition-all ${
+        className={`flex size-11 items-center justify-center rounded-none border backdrop-blur-md transition-colors disabled:opacity-50 ${
           liked === "dislike"
-            ? "border-white/40 bg-[color:var(--danger)] text-white shadow-lg"
+            ? "border-[color:var(--chi,#8B2500)] bg-[color:var(--chi,#8B2500)] text-white shadow-lg"
             : "border-white/15 bg-black/55 text-white hover:bg-black/75"
         }`}
       >
@@ -286,10 +306,10 @@ function SelectCheckbox({
       disabled={disabled}
       aria-pressed={selected}
       aria-label={selected ? "Снять выбор" : "Выбрать рилс"}
-      className={`absolute right-3 bottom-3 flex size-9 items-center justify-center rounded-full border backdrop-blur-md transition-opacity ${
+      className={`absolute bottom-2 right-2 flex size-11 items-center justify-center rounded-none border backdrop-blur-md transition-opacity ${
         selected
-          ? "border-white/40 bg-[color:var(--accent-primary)] text-white shadow-lg opacity-100"
-          : "border-white/15 bg-black/55 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+          ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-[color:var(--ink)] shadow-lg opacity-100"
+          : "border-white/15 bg-black/55 text-white opacity-100 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
       }`}
     >
       {selected ? (
@@ -317,27 +337,29 @@ function DeleteButton({
   onDelete,
   disabled,
   reelId,
+  confirm,
 }: {
   onDelete: () => void;
   disabled: boolean;
   reelId: string;
+  confirm: ReturnType<typeof useConfirm>;
 }) {
   return (
     <button
       type="button"
-      onClick={(event) => {
+      onClick={async (event) => {
         event.stopPropagation();
-        if (
-          typeof window !== "undefined" &&
-          !window.confirm(`Удалить рилс ${reelId}? Его файл будет стёрт с диска.`)
-        ) {
-          return;
-        }
-        onDelete();
+        const ok = await confirm({
+          title: `Удалить рилс ${reelId}?`,
+          description: "Файл рилса будет стёрт с диска. Это необратимо.",
+          confirmLabel: "Удалить",
+          destructive: true,
+        });
+        if (ok) onDelete();
       }}
       disabled={disabled}
       aria-label={`Удалить рилс ${reelId}`}
-      className="absolute left-3 bottom-3 flex size-9 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[color:var(--danger)]"
+      className="absolute bottom-2 left-2 flex size-11 items-center justify-center rounded-none border border-white/15 bg-black/55 text-white opacity-100 backdrop-blur-md transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-[color:var(--chi,#8B2500)]"
     >
       <svg
         width="16"
@@ -416,7 +438,7 @@ function ScoreBadge({
       type="button"
       onClick={onToggle}
       aria-expanded={showBreakdown}
-      className="absolute right-3 top-3 flex items-baseline gap-1 rounded-xl border border-white/15 bg-black/60 px-2.5 py-1.5 text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105"
+      className="absolute right-2 top-2 flex items-baseline gap-1 rounded-none border border-white/15 bg-black/60 px-2.5 py-1.5 text-white shadow-lg backdrop-blur-md transition-colors hover:border-[color:var(--gold)]"
       title={`Клиентская эвристика ${breakdown.score}/100 (длина + ритм, не оценка движка) — нажми для деталей`}
     >
       <span

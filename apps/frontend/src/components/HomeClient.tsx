@@ -9,7 +9,9 @@ import {
   type ProfileMaskRead,
   type SubtitleStylePreset,
 } from "@/lib/api";
+import { useUiMode, WizardStateProvider } from "@/contexts";
 import { UploadWizard } from "./upload/UploadWizard";
+import { GuidedFlow } from "./upload/guided/GuidedFlow";
 import { JobList } from "./JobList";
 import { DashboardHero } from "./dashboard/DashboardHero";
 
@@ -92,15 +94,24 @@ export function HomeClient({
       )}
 
       <section className="surface-card p-6">
-        <div className="divider mb-6">новая нарезка</div>
-        <UploadWizard
+        {/* WizardStateProvider смонтирован НАД обоими режимами: guided и
+            expert читают один источник состояния. Переключение режима
+            (useUiMode) не размонтирует store → File, project_id и все
+            выборы сохраняются (lossless switch). */}
+        <WizardStateProvider
           models={models}
           subtitlePresets={subtitlePresets}
           postProductionPresets={postProductionPresets}
-          profileMasks={profileMasks}
           defaultUseSourceForRender={defaultUseSourceForRender}
           onJobCreated={refreshJobs}
-        />
+        >
+          <StudioSwitch
+            models={models}
+            subtitlePresets={subtitlePresets}
+            postProductionPresets={postProductionPresets}
+            profileMasks={profileMasks}
+          />
+        </WizardStateProvider>
       </section>
 
       <section className="flex flex-col gap-4">
@@ -116,6 +127,84 @@ export function HomeClient({
         </div>
         <JobList jobs={jobs} />
       </section>
+    </div>
+  );
+}
+
+interface StudioSwitchProps {
+  models: ModelsInfo;
+  subtitlePresets: SubtitleStylePreset[];
+  postProductionPresets: PostProductionPreset[];
+  profileMasks: ProfileMaskRead[];
+}
+
+/**
+ * Переключатель режима Студии. Сегмент-контрол сверху (Пошаговый/Эксперт) +
+ * сам режим. Оба читают общий WizardStateProvider выше — данные не теряются
+ * при переключении. Сегмент-контрол управляет глобальным useUiMode (persist).
+ */
+function StudioSwitch({
+  models,
+  subtitlePresets,
+  postProductionPresets,
+  profileMasks,
+}: StudioSwitchProps) {
+  const { mode, setMode, isGuided } = useUiMode();
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="divider flex-1">новая нарезка</div>
+        <div
+          role="tablist"
+          aria-label="Режим студии"
+          className="flex shrink-0 border border-[color:var(--line)]"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={isGuided}
+            onClick={() => setMode("guided")}
+            className={`mono px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-colors ${
+              isGuided
+                ? "bg-[color:var(--gold)] text-[color:var(--ink)]"
+                : "text-[color:var(--mute-2)] hover:text-[color:var(--paper)]"
+            }`}
+          >
+            Пошаговый
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "expert"}
+            onClick={() => setMode("expert")}
+            className={`mono border-l border-[color:var(--line)] px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] transition-colors ${
+              mode === "expert"
+                ? "bg-[color:var(--gold)] text-[color:var(--ink)]"
+                : "text-[color:var(--mute-2)] hover:text-[color:var(--paper)]"
+            }`}
+          >
+            Эксперт
+          </button>
+        </div>
+      </div>
+
+      {isGuided ? (
+        <GuidedFlow
+          models={models}
+          subtitlePresets={subtitlePresets}
+          profileMasks={profileMasks}
+          onOpenExpert={() => setMode("expert")}
+        />
+      ) : (
+        <UploadWizard
+          models={models}
+          subtitlePresets={subtitlePresets}
+          postProductionPresets={postProductionPresets}
+          profileMasks={profileMasks}
+          onOpenGuided={() => setMode("guided")}
+        />
+      )}
     </div>
   );
 }

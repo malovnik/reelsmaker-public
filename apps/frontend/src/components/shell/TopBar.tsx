@@ -1,28 +1,47 @@
 import { Link } from "react-router-dom";
 import { usePathname } from "@/lib/router-compat";
 import { useMemo } from "react";
+import {
+  NAV_ZONES,
+  SETTINGS_SECTIONS,
+  isZoneActive,
+} from "@/lib/nav/routes";
+import { ModeSwitch } from "./ModeSwitch";
+import { HealthIndicator } from "./HealthIndicator";
 
 interface Crumb {
   label: string;
   href?: string;
 }
 
-const SEGMENT_LABELS: Record<string, string> = {
-  "": "Студия",
+/**
+ * Метки сегментов пути для крошек. Источник правды — единый словарь
+ * (NAV_ZONES + SETTINGS_SECTIONS); здесь — только вложенные сегменты, которых
+ * нет в словаре (детальные экраны проектов/планировщика).
+ */
+const EXTRA_SEGMENT_LABELS: Record<string, string> = {
   jobs: "Библиотека",
-  settings: "Настройки",
-  models: "Модели",
-  performance: "Производительность",
-  "post-production": "Пост-продакшн",
-  prompts: "Промпты",
-  subtitles: "Субтитры",
-  profiles: "Профили",
-  tinder: "Tinder",
+  reels: "Клипы",
+  tinder: "Отбор",
+  folder: "Папка",
+  accounts: "Аккаунты",
+  campaigns: "Кампании",
+  presets: "Пресеты",
+  new: "Создать",
+};
+
+/** label → href из словаря по первому сегменту пути. */
+const SEGMENT_FROM_DICTIONARY: Record<string, string> = {
+  ...Object.fromEntries(
+    SETTINGS_SECTIONS.map((s) => [s.href.split("/").pop() as string, s.label]),
+  ),
 };
 
 function humanizeSegment(seg: string): string {
-  if (seg in SEGMENT_LABELS) return SEGMENT_LABELS[seg];
+  if (seg in EXTRA_SEGMENT_LABELS) return EXTRA_SEGMENT_LABELS[seg];
+  if (seg in SEGMENT_FROM_DICTIONARY) return SEGMENT_FROM_DICTIONARY[seg];
   if (/^[0-9a-f]{8}-/i.test(seg)) return `${seg.slice(0, 8)}…`;
+  if (/^\d+$/.test(seg)) return `#${seg}`;
   return seg;
 }
 
@@ -38,14 +57,21 @@ export function TopBar({ onOpenNav }: Props) {
   const pathname = usePathname();
 
   const crumbs = useMemo<Crumb[]>(() => {
-    if (pathname === "/") {
-      return [{ label: "Нарезки" }];
+    // Стартовая крошка — активная зона из словаря (Студия по умолчанию).
+    const zone =
+      NAV_ZONES.find((z) => isZoneActive(z, pathname)) ?? NAV_ZONES[0];
+
+    if (pathname === "/" || pathname === zone.href) {
+      return [{ label: zone.label }];
     }
+
+    const result: Crumb[] = [{ label: zone.label, href: zone.href }];
     const segments = pathname.split("/").filter(Boolean);
-    const result: Crumb[] = [{ label: "Нарезки", href: "/" }];
     let acc = "";
     segments.forEach((seg, idx) => {
       acc += `/${seg}`;
+      // пропускаем сегмент, совпавший с уже добавленным href зоны
+      if (acc === zone.href) return;
       const isLast = idx === segments.length - 1;
       result.push({
         label: humanizeSegment(seg),
@@ -62,7 +88,7 @@ export function TopBar({ onOpenNav }: Props) {
         type="button"
         onClick={onOpenNav}
         aria-label="Открыть навигацию"
-        className="-ml-1 inline-flex size-9 items-center justify-center rounded-md text-[color:var(--mute-2)] transition-colors hover:bg-[color:var(--ink-2)] hover:text-[color:var(--paper)] lg:hidden"
+        className="-ml-1 inline-flex size-11 items-center justify-center rounded-none text-[color:var(--mute-2)] transition-colors hover:bg-[color:var(--ink-2)] hover:text-[color:var(--paper)] lg:hidden"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <line x1="3" y1="6" x2="21" y2="6" />
@@ -71,9 +97,23 @@ export function TopBar({ onOpenNav }: Props) {
         </svg>
       </button>
 
+      {/* Лого — только на mobile (на desktop живёт в шапке рейла). */}
+      <Link
+        to="/"
+        aria-label="Reelibra — на главную"
+        className="flex shrink-0 items-center gap-2 lg:hidden"
+      >
+        <span className="display-serif text-[1.25rem] font-semibold leading-none tracking-[-0.025em] text-[color:var(--gold)]">
+          Reelibra
+        </span>
+        <span className="mono rounded-none border border-[color:var(--line)] bg-[color:var(--ink-3)] px-1 py-0.5 text-[9px] font-medium text-[color:var(--gold)]">
+          β
+        </span>
+      </Link>
+
       <nav
         aria-label="Хлебные крошки"
-        className="flex min-w-0 flex-1 items-center gap-2.5 overflow-x-auto text-sm"
+        className="hidden min-w-0 flex-1 items-center gap-2.5 overflow-x-auto text-sm sm:flex"
       >
         {crumbs.map((c, idx) => {
           const last = idx === crumbs.length - 1;
@@ -98,6 +138,7 @@ export function TopBar({ onOpenNav }: Props) {
                       ? "text-[color:var(--paper)]"
                       : "text-[color:var(--mute-2)]"
                   }
+                  aria-current={last ? "page" : undefined}
                 >
                   {c.label}
                 </span>
@@ -107,9 +148,9 @@ export function TopBar({ onOpenNav }: Props) {
         })}
       </nav>
 
-      <div className="ml-auto flex shrink-0 items-center gap-3">
+      <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
         <div
-          className="mono hidden min-w-[420px] items-center gap-2.5 rounded-md border border-[color:var(--line-soft)] bg-[color:var(--ink-2)] px-3.5 py-2 text-[12px] text-[color:var(--mute-2)] xl:flex"
+          className="mono hidden min-w-[280px] items-center gap-2.5 rounded-none border border-[color:var(--line-soft)] bg-[color:var(--ink-2)] px-3.5 py-2 text-[12px] text-[color:var(--mute-2)] xl:flex"
           aria-label="Поиск по проектам"
         >
           <svg
@@ -129,6 +170,9 @@ export function TopBar({ onOpenNav }: Props) {
           <span className="flex-1 text-[12px]">Найти проект, клип, момент…</span>
           <span className="kbd">⌘K</span>
         </div>
+
+        <ModeSwitch />
+        <HealthIndicator />
       </div>
     </header>
   );

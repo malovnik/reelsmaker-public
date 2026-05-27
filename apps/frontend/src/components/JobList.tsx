@@ -1,6 +1,7 @@
 
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { api, type JobRead, type VisionProfile } from "@/lib/api";
+import { useConfirm, useToast } from "@/contexts";
 import { JobCard } from "@/components/dashboard/JobCard";
 import {
   FilterChipRow,
@@ -27,6 +28,8 @@ type ViewMode = "grid" | "list";
 const VIEW_STORAGE_KEY = "reelibra.dashboard.view";
 
 export function JobList({ jobs: initial }: Props) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [jobs, setJobs] = useState<JobRead[]>(initial);
   const [filter, setFilter] = useState<ProfileFilter>("all");
   const [sortBy, setSortBy] = useState<SortBy>("newest");
@@ -38,7 +41,6 @@ export function JobList({ jobs: initial }: Props) {
   });
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
   const setViewPersisted = useCallback((next: ViewMode) => {
     setView(next);
@@ -55,10 +57,10 @@ export function JobList({ jobs: initial }: Props) {
           prev.map((j) => (j.id === jobId ? updated : j)),
         );
       } catch (exc) {
-        setError(`Не удалось переименовать: ${(exc as Error).message}`);
+        toast.showError(exc);
       }
     },
-    [],
+    [toast],
   );
 
   const counts = useMemo<Record<ProfileFilter, number>>(() => {
@@ -124,7 +126,6 @@ export function JobList({ jobs: initial }: Props) {
       if (selected.size === 0) return;
       const ids = [...selected];
       startTransition(async () => {
-        setError(null);
         const failures: string[] = [];
         await Promise.all(
           ids.map(async (id) => {
@@ -138,13 +139,15 @@ export function JobList({ jobs: initial }: Props) {
         setJobs((prev) => prev.filter((j) => failures.includes(j.id) || !selected.has(j.id)));
         setSelected(new Set(failures));
         if (failures.length > 0) {
-          setError(
-            `${failures.length} из ${ids.length} не удалось обработать. Попробуй ещё раз.`,
-          );
+          toast.error(`Не обработали ${failures.length} из ${ids.length}`, {
+            detail: "Часть нарезок осталась — попробуй ещё раз.",
+          });
+        } else {
+          toast.success(`Готово: обработали ${ids.length} нарезок`);
         }
       });
     },
-    [selected],
+    [selected, toast],
   );
 
   if (jobs.length === 0) {
@@ -224,14 +227,6 @@ export function JobList({ jobs: initial }: Props) {
           </button>
         </div>
       </div>
-      {error && (
-        <div
-          role="alert"
-          className="rounded-lg border border-[color:var(--danger)] bg-[color:var(--danger)]/10 px-3 py-2 text-xs text-[color:var(--danger)]"
-        >
-          {error}
-        </div>
-      )}
       {filtered.length === 0 ? (
         <div className="surface-card p-10 text-center text-sm text-[color:var(--text-secondary)]">
           В этой категории нарезок нет — переключись на «Все» либо загрузи
@@ -283,16 +278,15 @@ export function JobList({ jobs: initial }: Props) {
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (
-                  typeof window !== "undefined" &&
-                  !window.confirm(
-                    "Удалить файлы всех не-лайкнутых рилсов этих нарезок? Отлайканные рилсы, рабочая копия и транскрипт сохранятся.",
-                  )
-                ) {
-                  return;
-                }
-                deleteSelected("hard");
+              onClick={async () => {
+                const ok = await confirm({
+                  title: "Удалить лишние рилсы?",
+                  description:
+                    "Сотрём файлы всех не-лайкнутых рилсов выбранных нарезок. Отлайканные рилсы, рабочая копия и транскрипт сохранятся.",
+                  confirmLabel: "Удалить лишние",
+                  destructive: true,
+                });
+                if (ok) deleteSelected("hard");
               }}
               disabled={isPending}
               className="rounded-full bg-[color:var(--surface-sunken)] px-3 py-1 text-xs font-medium text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-raised)] disabled:cursor-not-allowed disabled:opacity-60"
@@ -302,16 +296,15 @@ export function JobList({ jobs: initial }: Props) {
             </button>
             <button
               type="button"
-              onClick={() => {
-                if (
-                  typeof window !== "undefined" &&
-                  !window.confirm(
-                    `Полностью удалить ${selected.size} нарезок со всеми файлами? Будут удалены исходное видео, артефакты, рилсы, транскрипт — всё. Это необратимо.`,
-                  )
-                ) {
-                  return;
-                }
-                deleteSelected("nuke");
+              onClick={async () => {
+                const ok = await confirm({
+                  title: `Удалить ${selected.size} нарезок полностью?`,
+                  description:
+                    "Сотрём исходное видео, артефакты, рилсы и транскрипт — всё. Это необратимо.",
+                  confirmLabel: "Удалить полностью",
+                  destructive: true,
+                });
+                if (ok) deleteSelected("nuke");
               }}
               disabled={isPending}
               className="btn btn-danger px-4 py-1.5 rounded-full disabled:cursor-not-allowed disabled:opacity-60"

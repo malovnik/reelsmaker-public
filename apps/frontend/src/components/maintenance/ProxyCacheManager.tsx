@@ -1,28 +1,31 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, type ProxyEntry, type ProxyListResponse } from "@/lib/api";
+import { Button } from "@/components/ui";
+import { ActionButton } from "@/components/settings-shared";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 /**
- * R8.1 — UI управления кэшем proxy-файлов: список, LRU-cleanup, удаление
- * по source-хэшу. Бэк: /api/v1/proxies.
+ * Управление кэшем рабочих копий: список, очистка по объёму, точечное
+ * удаление. Ошибки — через useToast.showError, удаление — через useConfirm.
  */
 export function ProxyCacheManager() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [data, setData] = useState<ProxyListResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       setData(await api.listProxies());
     } catch (err) {
-      setError(`Не удалось загрузить список: ${String(err)}`);
+      toast.showError(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     void reload();
@@ -31,16 +34,14 @@ export function ProxyCacheManager() {
   async function handleCleanup() {
     if (busy) return;
     setBusy(true);
-    setNotice(null);
-    setError(null);
     try {
       const res = await api.cleanupProxies();
-      setNotice(
-        `Очистка завершена: удалено ${res.deleted}, освобождено ${res.freed_mb} МБ (лимит ${res.requested_max_gb} ГБ).`,
-      );
+      toast.success("Кэш очищен", {
+        detail: `Удалено ${res.deleted} · освобождено ${res.freed_mb} МБ (лимит ${res.requested_max_gb} ГБ).`,
+      });
       await reload();
     } catch (err) {
-      setError(`Очистка не удалась: ${String(err)}`);
+      toast.showError(err);
     } finally {
       setBusy(false);
     }
@@ -48,72 +49,63 @@ export function ProxyCacheManager() {
 
   async function handleDelete(entry: ProxyEntry) {
     if (busy) return;
+    const ok = await confirm({
+      title: "Удалить рабочую копию?",
+      description:
+        "Файл уберётся из кэша. При следующей обработке этого исходника копия пересоздастся заново.",
+      confirmLabel: "Удалить",
+    });
+    if (!ok) return;
     setBusy(true);
-    setNotice(null);
-    setError(null);
     try {
       await api.deleteProxy(entry.sha256);
-      setNotice(`Удалён proxy ${entry.sha256.slice(0, 12)}…`);
+      toast.success(`Удалена копия ${entry.sha256.slice(0, 12)}…`);
       await reload();
     } catch (err) {
-      setError(`Не удалось удалить: ${String(err)}`);
+      toast.showError(err);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className="surface-card flex flex-col gap-4 p-6">
+    <section className="rounded-none border border-[var(--line)] bg-[var(--ink-2)] p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-[color:var(--text-primary)]">
-            Кэш proxy-файлов
+        <div className="min-w-0">
+          <h2 className="font-[family-name:var(--font-serif)] text-[1.0625rem] font-bold text-[var(--paper)]">
+            Кэш рабочих копий
           </h2>
-          <p className="text-sm text-[color:var(--text-secondary)]">
+          <p className="mt-1 text-[0.8125rem] leading-snug text-[var(--mute)]">
             Облегчённые копии исходников для быстрой обработки.
             {data &&
               ` Всего ${data.total_count} файлов · ${data.total_size_mb} МБ.`}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={reload}
-            disabled={busy || loading}
-            className="rounded-lg border border-[color:var(--line-soft)] px-3 py-2 text-xs font-medium text-[color:var(--text-secondary)] transition-colors hover:text-[color:var(--text-primary)] disabled:opacity-50"
-          >
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" size="sm" disabled={busy || loading} onClick={reload}>
             Обновить
-          </button>
-          <button
-            type="button"
-            onClick={handleCleanup}
+          </Button>
+          <ActionButton
+            variant="secondary"
+            size="sm"
+            hintKey="proxy_cleanup"
             disabled={busy || loading || !data || data.total_count === 0}
-            className="rounded-lg border border-[color:var(--line-soft)] px-3 py-2 text-xs font-semibold text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--ink-2)] disabled:opacity-50"
+            loading={busy}
+            onClick={handleCleanup}
           >
-            {busy ? "Чистим…" : "Очистить (LRU)"}
-          </button>
+            Очистить (старые первыми)
+          </ActionButton>
         </div>
       </div>
 
-      {error && (
-        <p className="rounded-lg border border-[color:var(--danger,#b91c1c)] bg-[color:var(--danger,#b91c1c)]/10 px-3 py-2 text-xs text-[color:var(--danger,#b91c1c)]">
-          {error}
-        </p>
-      )}
-      {notice && (
-        <p className="rounded-lg border border-[color:var(--line-soft)] px-3 py-2 text-xs text-[color:var(--text-secondary)]">
-          {notice}
-        </p>
-      )}
-
       {loading ? (
-        <p className="text-sm text-[color:var(--text-muted)]">Загрузка…</p>
+        <p className="mt-4 text-[0.875rem] text-[var(--mute)]">Загрузка…</p>
       ) : data && data.items.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="text-[color:var(--text-muted)]">
-              <tr className="border-b border-[color:var(--line-soft)]">
-                <th className="py-2 pr-3 font-medium">Source (sha256)</th>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-left text-[0.8125rem]">
+            <thead className="text-[var(--mute)]">
+              <tr className="border-b border-[var(--line)]">
+                <th className="py-2 pr-3 font-medium">Источник (хэш)</th>
                 <th className="py-2 pr-3 font-medium">Профиль</th>
                 <th className="py-2 pr-3 font-medium">Размер</th>
                 <th className="py-2 pr-3 font-medium">Возраст</th>
@@ -124,22 +116,20 @@ export function ProxyCacheManager() {
               {data.items.map((entry) => (
                 <tr
                   key={`${entry.sha256}-${entry.profile_id}`}
-                  className="border-b border-[color:var(--line-soft)]/50"
+                  className="border-b border-[var(--line)] text-[var(--mute-2)]"
                 >
-                  <td className="py-2 pr-3 font-mono">
+                  <td className="py-2 pr-3 font-[family-name:var(--font-mono)]">
                     {entry.sha256.slice(0, 16)}…
                   </td>
                   <td className="py-2 pr-3">{entry.profile_id}</td>
                   <td className="py-2 pr-3">{entry.file_size_mb} МБ</td>
-                  <td className="py-2 pr-3">
-                    {formatAge(entry.age_sec)}
-                  </td>
+                  <td className="py-2 pr-3">{formatAge(entry.age_sec)}</td>
                   <td className="py-2 pr-3 text-right">
                     <button
                       type="button"
                       onClick={() => handleDelete(entry)}
                       disabled={busy}
-                      className="text-[color:var(--danger,#b91c1c)] transition-opacity hover:opacity-70 disabled:opacity-40"
+                      className="text-[var(--danger)] transition-opacity hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--danger)] disabled:opacity-40"
                     >
                       Удалить
                     </button>
@@ -150,8 +140,8 @@ export function ProxyCacheManager() {
           </table>
         </div>
       ) : (
-        <p className="text-sm text-[color:var(--text-muted)]">
-          Кэш пуст — proxy-файлов нет.
+        <p className="mt-4 text-[0.875rem] text-[var(--mute)]">
+          Кэш пуст — рабочих копий нет.
         </p>
       )}
     </section>

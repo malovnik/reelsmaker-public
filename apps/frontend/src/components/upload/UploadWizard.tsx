@@ -25,11 +25,11 @@ import {
   Step,
   ToggleRow,
 } from "./WizardSteps";
+import { useToast, useWizardStateContext } from "@/contexts";
 import {
   ASPECTS,
   REEL_COUNT_MAX,
   REEL_COUNT_MIN,
-  useWizardState,
   type Aspect,
 } from "./useWizardState";
 
@@ -80,28 +80,35 @@ interface Props {
   subtitlePresets?: SubtitleStylePreset[];
   postProductionPresets?: PostProductionPreset[];
   profileMasks?: ProfileMaskRead[];
-  defaultUseSourceForRender?: boolean;
-  onJobCreated?: (jobId: string) => void;
+  /** Переход в Пошаговый режим (ссылка в шапке формы). */
+  onOpenGuided?: () => void;
 }
 
+/**
+ * Эксперт-форма: все настройки на одном экране. Состояние общее с Пошаговым —
+ * из WizardStateProvider (переключение режима ничего не теряет, включая File).
+ */
 export function UploadWizard({
   models,
   subtitlePresets = [],
   postProductionPresets = [],
   profileMasks = [],
-  defaultUseSourceForRender = false,
-  onJobCreated,
+  onOpenGuided,
 }: Props) {
-  const { state, actions } = useWizardState({
-    models,
-    subtitlePresets,
-    postProductionPresets,
-    defaultUseSourceForRender,
-    onJobCreated,
-  });
+  const { state, actions } = useWizardStateContext();
+  const toast = useToast();
 
   const [isDragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const rejectFile = useCallback(
+    (name: string) => {
+      toast.error("Не тот формат файла", {
+        detail: `Подходят ${ACCEPTED.join(", ")}. Выбран: ${name}`,
+      });
+    },
+    [toast],
+  );
 
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
@@ -110,15 +117,13 @@ export function UploadWizard({
       const dropped = event.dataTransfer.files[0];
       if (!dropped) return;
       if (!isAcceptedFile(dropped)) {
-        actions.setError(
-          `Поддерживаются только ${ACCEPTED.join(", ")}. Получен: ${dropped.name}`,
-        );
+        rejectFile(dropped.name);
         return;
       }
       actions.setError(null);
       actions.applySelectedFile(dropped);
     },
-    [actions],
+    [actions, rejectFile],
   );
 
   const onSelect = useCallback(
@@ -126,15 +131,13 @@ export function UploadWizard({
       const selected = event.target.files?.[0];
       if (!selected) return;
       if (!isAcceptedFile(selected)) {
-        actions.setError(
-          `Поддерживаются только ${ACCEPTED.join(", ")}. Получен: ${selected.name}`,
-        );
+        rejectFile(selected.name);
         return;
       }
       actions.setError(null);
       actions.applySelectedFile(selected);
     },
-    [actions],
+    [actions, rejectFile],
   );
 
   if (models.available_providers.length === 0) {
@@ -149,6 +152,15 @@ export function UploadWizard({
 
   return (
     <div className="flex flex-col gap-6">
+      {onOpenGuided && (
+        <button
+          type="button"
+          onClick={onOpenGuided}
+          className="link self-start font-[family-name:var(--font-mono)] text-[0.75rem] uppercase tracking-[0.12em]"
+        >
+          ← Вернуться к пошаговому режиму
+        </button>
+      )}
       <Step
         index={1}
         title="Под какой тип видео нарезаем"
@@ -856,7 +868,10 @@ export function UploadWizard({
           role="alert"
           className="rounded-lg border border-[color:var(--danger)]/30 bg-[color:var(--danger)]/10 p-3 text-sm text-[color:var(--danger)]"
         >
-          {state.error}
+          <span className="font-medium">{state.error.title}</span>
+          <span className="block text-[color:var(--text-secondary)]">
+            {state.error.detail}
+          </span>
         </div>
       )}
 

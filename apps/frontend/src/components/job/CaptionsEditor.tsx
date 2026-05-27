@@ -1,6 +1,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { api, ApiError } from "@/lib/api";
+import { useToast } from "@/contexts";
+import { humanizeError } from "@/lib/humanizeError";
 
 interface Props {
   jobId: string;
@@ -10,10 +12,11 @@ interface Props {
 type Status = "loading" | "ready" | "error" | "missing";
 
 export function CaptionsEditor({ jobId, reelId }: Props) {
+  const toast = useToast();
   const [content, setContent] = useState("");
   const [saved, setSaved] = useState("");
   const [status, setStatus] = useState<Status>("loading");
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
   const [savedFlash, setSavedFlash] = useState(false);
 
@@ -33,7 +36,8 @@ export function CaptionsEditor({ jobId, reelId }: Props) {
           setStatus("missing");
           return;
         }
-        setError(err instanceof Error ? err.message : String(err));
+        const human = humanizeError(err);
+        setLoadError(`${human.title}. ${human.detail}`);
         setStatus("error");
       });
     return () => {
@@ -44,7 +48,6 @@ export function CaptionsEditor({ jobId, reelId }: Props) {
   const isDirty = content !== saved;
 
   const onSave = () => {
-    setError(null);
     startSaving(async () => {
       try {
         await api.updateReelSubtitles(jobId, reelId, content);
@@ -52,7 +55,7 @@ export function CaptionsEditor({ jobId, reelId }: Props) {
         setSavedFlash(true);
         setTimeout(() => setSavedFlash(false), 1500);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        toast.showError(err);
       }
     });
   };
@@ -76,7 +79,7 @@ export function CaptionsEditor({ jobId, reelId }: Props) {
   if (status === "error") {
     return (
       <div className="text-[12px] text-[color:var(--danger)]">
-        Не получилось загрузить субтитры: {error}
+        {loadError ?? "Не получилось загрузить субтитры."}
       </div>
     );
   }
@@ -107,9 +110,6 @@ export function CaptionsEditor({ jobId, reelId }: Props) {
           <span className="text-[11px] text-[color:var(--mute-2)]">
             Сохранено
           </span>
-        )}
-        {error && (
-          <span className="text-[11px] text-[color:var(--danger)]">{error}</span>
         )}
       </div>
       <p className="text-[11px] leading-snug text-[color:var(--mute-2)]">

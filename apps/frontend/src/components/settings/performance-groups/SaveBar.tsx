@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui";
 
 export type SaveStatus =
   | { kind: "pristine" }
@@ -32,10 +33,10 @@ export function SaveBar({
   return (
     <div
       role="status"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-overlay)] backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-[color:var(--line)] bg-[color:var(--ink-2)] backdrop-blur"
     >
       <div className="page-shell flex items-center justify-between gap-4 !py-3">
-        <span className="text-xs text-[color:var(--text-secondary)]">
+        <span className="text-xs text-[color:var(--mute-2)]">
           {status.kind === "saving" && "Сохраняем…"}
           {status.kind === "saved" && (
             <span className="font-medium text-[color:var(--success)]">
@@ -52,22 +53,22 @@ export function SaveBar({
             "Есть несохранённые изменения"}
         </span>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onReset}
             disabled={!isDirty || isPending}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition-colors hover:text-[color:var(--text-primary)] disabled:opacity-40"
           >
             Откатить
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={onSave}
             disabled={!isDirty || isPending}
-            className="rounded-lg bg-[color:var(--accent-primary)] px-4 py-1.5 text-xs font-semibold text-[color:var(--accent-on-primary)] shadow-[var(--shadow-sm)] transition-colors hover:bg-[color:var(--accent-primary-hover)] disabled:cursor-not-allowed disabled:bg-[color:var(--surface-sunken)] disabled:text-[color:var(--text-disabled)] disabled:shadow-none"
           >
             Сохранить
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,32 +1,6 @@
 import { Link } from "react-router-dom";
 import { usePathname } from "@/lib/router-compat";
-
-interface NavItem {
-  href: string;
-  code: string;
-  label: string;
-  matchPrefix?: string;
-  disabled?: boolean;
-}
-
-const ITEMS: NavItem[] = [
-  { href: "/", code: "DSH", label: "Студия", matchPrefix: "/" },
-  { href: "/projects", code: "PRJ", label: "Проекты", matchPrefix: "/projects" },
-  { href: "/scheduler", code: "SCH", label: "Шедулер", matchPrefix: "/scheduler" },
-  { href: "/settings/profiles", code: "PRF", label: "Профили", matchPrefix: "/settings" },
-  { href: "/settings/models", code: "MDL", label: "Модели", matchPrefix: "/settings/models" },
-  { href: "/settings/subtitles", code: "CAP", label: "Субтитры", matchPrefix: "/settings/subtitles" },
-  { href: "/settings/post-production", code: "POP", label: "Пост-продакшн", matchPrefix: "/settings/post-production" },
-  { href: "/settings/prompts", code: "PMT", label: "Промпты", matchPrefix: "/settings/prompts" },
-  { href: "/settings/performance", code: "PFM", label: "Производительность", matchPrefix: "/settings/performance" },
-];
-
-function isActive(pathname: string, item: NavItem): boolean {
-  const prefix = item.matchPrefix ?? item.href;
-  if (prefix === "/") return pathname === "/";
-  if (item.href === "/settings/profiles") return pathname === "/settings/profiles";
-  return pathname.startsWith(prefix);
-}
+import { NAV_ZONES, isZoneActive } from "@/lib/nav/routes";
 
 interface Props {
   /**
@@ -37,6 +11,11 @@ interface Props {
   onClose?: () => void;
 }
 
+/**
+ * Рейл = только 4 рабочие зоны из единого словаря NAV_ZONES (U-02). Раздел
+ * «Настройки» — один пункт, активен для всего /settings/*; внутри него живёт
+ * SettingsSubNav со всеми 8 разделами. Drawer-адаптив на <1024px сохранён 1:1.
+ */
 export function NavRail({ mobileOpen = false, onClose }: Props) {
   const pathname = usePathname();
 
@@ -57,8 +36,7 @@ export function NavRail({ mobileOpen = false, onClose }: Props) {
           // Mobile: drawer поверх контента, скрыт по умолчанию
           "fixed inset-y-0 left-0 z-50 flex h-screen w-[280px] shrink-0 flex-col border-r border-[color:var(--line-soft)] bg-[color:var(--ink-2)] transition-transform duration-200 ease-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
-          // Desktop: sticky-рейл в потоке, всегда виден. Чуть шире (232px)
-          // чтобы пункты с bigger font не подрезались.
+          // Desktop: sticky-рейл в потоке, всегда виден (232px из брендбука).
           "lg:sticky lg:top-0 lg:z-auto lg:w-[232px] lg:translate-x-0",
         ].join(" ")}
         aria-label="Главная навигация"
@@ -68,12 +46,12 @@ export function NavRail({ mobileOpen = false, onClose }: Props) {
             <div className="flex items-center gap-2.5">
               <Link
                 to="/"
-                className="display-serif text-[1.5rem] font-semibold leading-none tracking-[-0.025em] text-[color:var(--paper)]"
+                className="display-serif text-[1.5rem] font-semibold leading-none tracking-[-0.025em] text-[color:var(--gold)]"
                 aria-label="Reelibra — на главную"
               >
                 Reelibra
               </Link>
-              <span className="mono rounded-md border border-[color:var(--line)] bg-[color:var(--ink-3)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--gold)]">
+              <span className="mono rounded-none border border-[color:var(--line)] bg-[color:var(--ink-3)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--gold)]">
                 β
               </span>
             </div>
@@ -84,7 +62,7 @@ export function NavRail({ mobileOpen = false, onClose }: Props) {
             type="button"
             onClick={onClose}
             aria-label="Закрыть навигацию"
-            className="-mr-1 inline-flex size-8 items-center justify-center rounded-md text-[color:var(--mute-2)] transition-colors hover:bg-[color:var(--ink-2)] hover:text-[color:var(--paper)] lg:hidden"
+            className="-mr-1 inline-flex size-11 items-center justify-center rounded-none text-[color:var(--mute-2)] transition-colors hover:bg-[color:var(--ink-3)] hover:text-[color:var(--paper)] lg:hidden"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -94,27 +72,26 @@ export function NavRail({ mobileOpen = false, onClose }: Props) {
         </div>
 
         <nav className="flex-1 overflow-auto px-3 py-4">
-          {ITEMS.map((item) => {
-            const active = isActive(pathname, item);
+          {NAV_ZONES.map((zone) => {
+            const active = isZoneActive(zone, pathname);
             return (
               <Link
-                key={`${item.code}-${item.href}`}
-                to={item.disabled ? "#" : item.href}
+                key={zone.code}
+                to={zone.href}
                 aria-current={active ? "page" : undefined}
-                aria-disabled={item.disabled || undefined}
                 className={[
-                  "group relative mb-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150",
+                  // тач-таргет ≥44px (min-h-11)
+                  "group relative mb-0.5 flex min-h-11 w-full items-center gap-3 rounded-none px-3 py-2.5 transition-colors duration-150",
                   active
                     ? "bg-[color:var(--ink-3)] text-[color:var(--paper)]"
                     : "text-[color:var(--mute-2)] hover:bg-[color:var(--ink-3)] hover:text-[color:var(--paper)]",
-                  item.disabled ? "pointer-events-none opacity-40" : "",
                 ].join(" ")}
               >
-                {/* Активный индикатор — gold dot слева, не борд */}
+                {/* Активный индикатор — gold-полоса слева (брендбук). */}
                 <span
                   aria-hidden="true"
                   className={[
-                    "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full transition-all",
+                    "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 transition-all",
                     active
                       ? "bg-[color:var(--gold)] opacity-100"
                       : "bg-transparent opacity-0",
@@ -128,9 +105,9 @@ export function NavRail({ mobileOpen = false, onClose }: Props) {
                     color: active ? "var(--gold)" : "inherit",
                   }}
                 >
-                  {item.code}
+                  {zone.code}
                 </span>
-                <span className="text-[0.9375rem] font-medium">{item.label}</span>
+                <span className="text-[0.9375rem] font-medium">{zone.label}</span>
               </Link>
             );
           })}

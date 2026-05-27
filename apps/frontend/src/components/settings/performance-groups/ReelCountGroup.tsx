@@ -31,7 +31,7 @@ export function ReelCountGroup({ values, update, onReset }: Props) {
       <button
         type="button"
         onClick={onReset}
-        className="self-start text-xs text-[color:var(--accent-primary)] underline-offset-2 hover:underline"
+        className="self-start text-[0.8125rem] text-[var(--gold)] underline-offset-2 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
       >
         Вернуть стандартные значения
       </button>

@@ -7,12 +7,12 @@ export function LLMGroup({ values, update }: GroupProps) {
     <Group title="Модели ИИ (качество vs скорость)">
       <SelectRow
         id="pipeline_llm_provider"
-        label="LLM-провайдер для нарезки"
-        hint="Gemini — основной провайдер с tier-матрицей (режим ниже). Zhipu GLM-5.1 — альтернатива: весь pipeline идёт через GLM-5.1 (требуется ZHIPU_API_KEY в .env). Hard switch: режим работы ниже игнорируется."
+        label="Провайдер ИИ для нарезки"
+        hintKey="llm_provider"
         value={values.pipeline_llm_provider}
         options={[
-          { value: "gemini", label: "Gemini (tier-матрица)" },
-          { value: "zhipu", label: "Zhipu GLM-5.1 (hard switch)" },
+          { value: "gemini", label: "Gemini (по уровням моделей)" },
+          { value: "zhipu", label: "Zhipu GLM-5.1 (весь конвейер на GLM)" },
         ]}
         onChange={(v) =>
           update("pipeline_llm_provider", v as "gemini" | "zhipu")
@@ -20,8 +20,8 @@ export function LLMGroup({ values, update }: GroupProps) {
       />
       <SelectRow
         id="llm_tier_profile"
-        label="Режим работы нейросети (только для Gemini)"
-        hint="Качество — каждая стадия идёт на свою модель по уровню: тяжёлые планирующие стадии на Gemini Pro, средние на Flash, остальное на выбранной ниже Flash-Lite. Дороже и медленнее, но сильнее держит контекст длинных видео. Классика — одна модель 3.1 Flash Lite Preview на всех стадиях (cheapest, как было раньше). Игнорируется когда выбран Zhipu GLM-5.1."
+        label="Режим качества моделей (только Gemini)"
+        hintKey="llm_tier_profile"
         value={values.llm_tier_profile}
         options={[
           { value: "fast", label: "Качество — Pro / Flash / Flash-Lite по стадиям" },
@@ -31,15 +31,15 @@ export function LLMGroup({ values, update }: GroupProps) {
       />
       {values.llm_tier_profile === "fast" && (
         <>
-          <p className="rounded-lg border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/10 p-3 text-xs leading-relaxed text-[color:var(--warning)]">
+          <p className="rounded-none border border-l-2 border-[var(--line)] border-l-[var(--warning)] bg-[var(--ink)] p-3 text-[0.8125rem] leading-snug text-[var(--warning)]">
             Включает Gemini Pro на тяжёлых стадиях — это заметно дороже и
-            медленнее обычного. Используй осознанно: для большинства видео
-            «Классика» (Flash-Lite) даёт сопоставимый результат за копейки.
+            медленнее. Для большинства видео «Классика» (Flash-Lite) даёт
+            сопоставимый результат за копейки.
           </p>
           <SelectRow
             id="llm_lite_variant"
-            label="Какой Flash-Lite использовать на лёгких стадиях"
-            hint="3.1 Flash Lite Preview — дешевле, но preview-статус (возможны нестыковки JSON schema). 2.5 Flash Lite — стабильное production-поколение, лучше держит строгий schema, чуть дороже. Это базовая (дефолтная) модель — Pro/Flash подключаются только на стадиях, где они реально нужны."
+            label="Базовая Flash-Lite на лёгких стадиях"
+            hintKey="llm_lite_variant"
             value={values.llm_lite_variant}
             options={[
               { value: "3_1", label: "Gemini 3.1 Flash Lite Preview" },

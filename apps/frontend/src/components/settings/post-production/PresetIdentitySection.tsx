@@ -21,16 +21,16 @@ export function PresetIdentitySection({
           type="text"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          className="w-full rounded-lg border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--accent-primary)]"
+          className="w-full rounded-none border border-[color:var(--line)] bg-[color:var(--ink)] px-3 py-2 text-sm text-[color:var(--paper)] outline-none focus:border-[color:var(--gold)]"
         />
       </Field>
       <Field label="По умолчанию">
-        <label className="flex h-9 cursor-pointer items-center gap-2 text-sm text-[color:var(--text-secondary)]">
+        <label className="flex h-9 cursor-pointer items-center gap-2 text-sm text-[color:var(--mute-2)]">
           <input
             type="checkbox"
             checked={isDefault}
             onChange={(e) => onIsDefaultChange(e.target.checked)}
-            className="size-4 accent-[color:var(--accent-primary)]"
+            className="size-4 accent-[color:var(--gold)]"
           />
           Применять к новым нарезкам
         </label>

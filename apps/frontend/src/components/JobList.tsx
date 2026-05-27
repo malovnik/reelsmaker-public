@@ -255,7 +255,7 @@ export function JobList({ jobs: initial }: Props) {
 
       {selected.size > 0 && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-6">
-          <div className="pointer-events-auto flex flex-wrap items-center gap-3 rounded-full border border-[color:var(--border-default)] bg-[color:var(--surface-overlay)] px-4 py-2 shadow-[var(--shadow-lg)] backdrop-blur">
+          <div className="pointer-events-auto flex flex-wrap items-center gap-3  border border-[color:var(--border-default)] bg-[color:var(--surface-overlay)] px-4 py-2 backdrop-blur">
             <span className="text-xs text-[color:var(--text-secondary)]">
               Выбрано {selected.size}
             </span>
@@ -271,7 +271,7 @@ export function JobList({ jobs: initial }: Props) {
               type="button"
               onClick={() => deleteSelected("soft")}
               disabled={isPending}
-              className="rounded-full bg-[color:var(--surface-raised)] px-3 py-1 text-xs font-medium text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+              className=" bg-[color:var(--surface-raised)] px-3 py-1 text-xs font-medium text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
               title="Скрыть из галереи. Файлы и данные остаются на диске."
             >
               Скрыть из галереи
@@ -289,7 +289,7 @@ export function JobList({ jobs: initial }: Props) {
                 if (ok) deleteSelected("hard");
               }}
               disabled={isPending}
-              className="rounded-full bg-[color:var(--surface-sunken)] px-3 py-1 text-xs font-medium text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-raised)] disabled:cursor-not-allowed disabled:opacity-60"
+              className=" bg-[color:var(--surface-sunken)] px-3 py-1 text-xs font-medium text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-raised)] disabled:cursor-not-allowed disabled:opacity-60"
               title="Удалить mp4 не-лайкнутых рилсов. Отлайканные остаются."
             >
               Удалить лишние рилсы
@@ -307,7 +307,7 @@ export function JobList({ jobs: initial }: Props) {
                 if (ok) deleteSelected("nuke");
               }}
               disabled={isPending}
-              className="btn btn-danger px-4 py-1.5 rounded-full disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn btn-danger px-4 py-1.5  disabled:cursor-not-allowed disabled:opacity-60"
               title="Удалить всё: исходник, артефакты, БД-запись. Необратимо."
             >
               Удалить полностью

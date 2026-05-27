@@ -23,7 +23,7 @@
  *
  * Все legacy-классы сохранены и переопределены под новый стиль:
  * .display-serif/.serif/.mono/.surface-card/.stamp/.btn/.divider/.score-ring/
- * .heatmap/.range-track/.kbd/.grain/.gradient-accent/.link/.hair*/.micro/
+ * .heatmap/.range-track/.kbd/.grain/.link/.hair*/.micro/
  * .caps/.tnum/.mute/.mute-2/.paper. JSX-разметка не правится.
  */
 
@@ -568,15 +568,6 @@ button {
   color: var(--paper);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
-}
-
-/* ────────── Gradient accent ────────── */
-.gradient-accent {
-  background: linear-gradient(
-    90deg,
-    var(--gold) 0%,
-    var(--copper, var(--gold-dim)) 100%
-  );
 }
 
 /* ────────── Heatmap ────────── */

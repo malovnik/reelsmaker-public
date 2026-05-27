@@ -1,20 +1,27 @@
 @import "tailwindcss";
 
 /**
- * Reelibra Design System — "Refined Cinema Dark".
+ * ReelsMaker Design System — 色の道 «латунь на чёрном лаке» (самурайский брендбук).
  *
- * Phase 10 redesign (2026-04-28). Заменяет terminal/cinema dark предыдущей
- * итерации:
- *   - Палитра: тёплый indigo-warm dark вместо холодного blue-cold dark.
- *   - Шрифты: Inter Variable (UI) + Geist Variable (display, numerals)
- *     + JetBrains Mono (service caps). Fraunces убран.
- *   - Базовый размер 17px (было 16px) — комфорт чтения для предпринимателей,
- *     а не для разработчиков.
- *   - Comfortable line-heights (1.55 body, 1.1 display).
- *   - Мягкие radii 10-16px (было 4-10).
- *   - Один насыщенный warm-gold accent против тёплого нейтрала.
+ * Phase 11 redesign. Замещает «Refined Cinema Dark» (OKLCH warm-indigo):
+ *   - Палитра: HEX-палитра брендбука. Kuro #0A0A0A (фон) → Sumi #1A1A1A
+ *     (подложки) → #202020 → Hai #2A2A2A (линии). Текст — Shiroi #F0E6D2
+ *     (тёплый пергамент), мета — Kasumi #8A8278. Акцент — Kinzoku #C9A84C
+ *     (латунь), блик — Kogane #E8C547, вторичный — Dō #B87333 (медь),
+ *     ошибка — Chi #8B2500. Чистый белый/чёрный запрещены.
+ *   - Шрифты: Noto Serif JP (заголовки/золото) + Manrope (body) +
+ *     JetBrains Mono (мета) + Press Start 2P (пиксельные микро-теги).
+ *     Self-host через @fontsource (src/lib/fonts.ts).
+ *   - Геометрия: прямые углы везде (border-radius: 0). Box-shadow запрещён —
+ *     глубина строится слоями подложек и 1px-бордерами, не тенями.
+ *   - Один акцент-золото, никогда не фон (≤25% площади).
  *
- * Все legacy-классы из Phase 9 сохранены и переопределены под новый стиль:
+ * Двухслойные токены: физика (--ink/--paper/--gold/--line/--mute/--ember)
+ * → перенаправлена на брендбук-палитру. Семантика (--text-primary/
+ * --surface-raised/--accent-primary и т.д.) НЕ переименована — 89 файлов
+ * на var(--*) меняют только вид, не ломаются.
+ *
+ * Все legacy-классы сохранены и переопределены под новый стиль:
  * .display-serif/.serif/.mono/.surface-card/.stamp/.btn/.divider/.score-ring/
  * .heatmap/.range-track/.kbd/.grain/.gradient-accent/.link/.hair*/.micro/
  * .caps/.tnum/.mute/.mute-2/.paper. JSX-разметка не правится.
@@ -24,63 +31,116 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-pixel: var(--font-pixel);
+
+  /* Прямые углы — обнуляем все Tailwind radius-токены (rounded-* → no-op) */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
+}
+
+/* Слой 3 — проброс брендбук-семантики в Tailwind-утилиты (bg-*, text-*, border-*).
+ * inline → значения резолвятся из :root в рантайме. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-copper: var(--copper);
+  --color-danger: var(--danger);
 }
 
 :root {
   color-scheme: dark;
 
+  /* ────────── Слой 1 — палитра брендбука (raw, не использовать в компонентах) ──────────
+   * 色の道. Чистый белый/чёрный запрещены.
+   */
+  --kuro:    #0A0A0A;   /* Kuro 黒 — основной фон */
+  --sumi:    #1A1A1A;   /* Sumi 墨 — подложки, карточки */
+  --sumi-2:  #202020;   /* промежуточная подложка (карточка в карточке) */
+  --hai:     #2A2A2A;   /* Hai 灰 — разделители, бордеры */
+  --kinzoku: #C9A84C;   /* Kinzoku 金属 — главный акцент (латунь) */
+  --do:      #B87333;   /* Dō 銅 — вторичный акцент (медь) */
+  --kogane:  #E8C547;   /* Kogane 黄金 — яркий блик */
+  --shiroi:  #F0E6D2;   /* Shiroi 白い — основной текст (пергамент) */
+  --kasumi:  #8A8278;   /* Kasumi 霞 — мета-текст */
+  --chi:     #8B2500;   /* Chi 血 — ошибка/деструктив */
+
   /* ────────── Шрифты ────────── */
-  --font-sans:
-    "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", sans-serif;
-  --font-display:
-    "Geist Variable", "Inter Variable", system-ui, sans-serif;
+  --font-display: "Noto Serif JP", serif;
+  --font-body:    "Manrope Variable", "Manrope", system-ui, sans-serif;
+  --font-sans:    var(--font-body);
   --font-mono:
     "JetBrains Mono Variable", "JetBrains Mono", ui-monospace,
     "SF Mono", "Cascadia Code", monospace;
-  --font-serif: var(--font-display);
+  --font-pixel:   "Press Start 2P", monospace;
+  --font-serif:   var(--font-display);
 
-  /* ────────── Surface hierarchy (warm dark) ──────────
-   * Hue 280 (тёплый indigo-фиолетовый), низкая chroma. Каждый шаг
-   * elevation = +0.02 lightness — тонко но визуально читается.
+  /* ────────── Физический слой (перенаправлен на палитру брендбука) ──────────
+   * Имена сохранены для совместимости с 89 файлами. Surface-иерархия —
+   * слои светлоты, глубина без теней.
    */
-  --ink:    oklch(0.155 0.008 280);   /* canvas */
-  --ink-2:  oklch(0.185 0.009 280);   /* raised cards */
-  --ink-3:  oklch(0.220 0.011 280);   /* sunken inputs */
-  --ink-4:  oklch(0.260 0.013 280);   /* overlays / hover */
-  --paper:     oklch(0.97 0.005 80);   /* primary text — warm white */
-  --paper-dim: oklch(0.86 0.008 80);   /* secondary text */
-  --white:     #ffffff;
+  --ink:    var(--kuro);     /* canvas (слой 1) */
+  --ink-2:  var(--sumi);     /* raised cards (слой 2) */
+  --ink-3:  var(--sumi-2);   /* sunken inputs / вложенная подложка */
+  --ink-4:  var(--hai);      /* overlays / hover */
+  --paper:     var(--shiroi);
+  --paper-dim: #D8CCB6;      /* пергамент, приглушённый — secondary text */
+  --white:     var(--shiroi);
 
   /* ────────── Borders (hairlines) ────────── */
-  --line:      oklch(0.32 0.012 280);
-  --line-soft: oklch(0.25 0.010 280);
+  --line:      var(--hai);
+  --line-soft: #222222;      /* между Sumi и Hai — мягкая линия */
 
-  /* ────────── Muted text tiers ──────────
-   * Подняты на 4-5 пунктов lightness vs Phase 9 — для contrast/readability.
-   * mute теперь хорошо читается на ink, не "проваливается" в фон.
+  /* ────────── Muted text tiers ────────── */
+  --mute:   var(--kasumi);
+  --mute-2: #A39C90;         /* чуть светлее Kasumi — secondary мета */
+
+  /* ────────── Accent (латунь / медь) ──────────
+   * Один акцент-золото, никогда не фон.
    */
-  --mute:   oklch(0.66 0.012 280);
-  --mute-2: oklch(0.78 0.010 280);
+  --gold:     var(--kinzoku);
+  --gold-dim: var(--do);
+  --ember:    var(--chi);     /* кроваво-красный — точечный hot-акцент */
+  --focus:    var(--kinzoku);
 
-  /* ────────── Accent (warm cinema gold) ──────────
-   * Одна сатурированная golden-amber точка на тёплом нейтрале —
-   * "тёплый свет на тёмном". Hue 75 (warmer than прежний 88).
+  /* ────────── Производные прозрачности ────────── */
+  --accent-soft: rgb(201 168 76 / 0.10);   /* featured-фон, свечение зоны */
+  --accent-line: rgb(201 168 76 / 0.40);   /* полу-видимый акцентный бордер */
+  --grid-line:   rgb(201 168 76 / 0.04);   /* пиксельная сетка-фон */
+  --danger-soft: rgb(139 37 0 / 0.15);     /* фон зоны ошибки */
+
+  /* ────────── Семантика брендбука (новый словарь для ui/* — спека §1.2) ──────────
+   * Потребляется через утилиты bg-surface/text-accent/border-line (@theme ниже).
    */
-  --gold:     oklch(0.84 0.16 75);
-  --gold-dim: oklch(0.66 0.12 75);
-  --ember:    oklch(0.72 0.19 45);
-  --focus:    oklch(0.84 0.16 75);
+  --bg:            var(--kuro);
+  --surface:       var(--sumi);
+  --surface-2:     var(--sumi-2);
+  --text:          var(--shiroi);
+  --accent:        var(--kinzoku);
+  --accent-bright: var(--kogane);
+  --copper:        var(--do);
 
-  /* ────────── Semantic aliases ────────── */
+  /* ────────── Semantic aliases (имена НЕ менять) ────────── */
   --surface-canvas:  var(--ink);
   --surface-raised:  var(--ink-2);
   --surface-sunken:  var(--ink-3);
-  --surface-overlay: oklch(0.18 0.010 280 / 0.92);
+  --surface-overlay: rgb(10 10 10 / 0.92);
 
   --border-subtle:  var(--line-soft);
   --border-default: var(--line);
-  --border-strong:  var(--paper);
+  --border-strong:  var(--gold);
 
   --text-primary:   var(--paper);
   --text-secondary: var(--paper-dim);
@@ -88,38 +148,37 @@
   --text-disabled:  var(--mute);
 
   --accent-primary:         var(--gold);
-  --accent-primary-hover:   oklch(0.88 0.16 75);
-  --accent-primary-subtle:  oklch(0.30 0.040 75);
-  --accent-on-primary:      oklch(0.18 0.020 75);
+  --accent-primary-hover:   var(--kogane);
+  --accent-primary-subtle:  var(--accent-soft);
+  --accent-on-primary:      var(--kuro);
 
-  --success: oklch(0.78 0.15 155);
-  --warning: oklch(0.82 0.16 80);
-  --danger:  oklch(0.72 0.19 25);
-  --info:    oklch(0.78 0.14 225);
+  --success: #7E9B5A;   /* приглушённый зелёный в тон палитры */
+  --warning: var(--kinzoku);
+  --danger:  var(--chi);
+  --info:    var(--do);
 
-  /* Profile accents (стабильны через переджайны для статусов) */
-  --profile-talking-head: oklch(0.78 0.14 225);
-  --profile-fashion:      oklch(0.74 0.20 0);
-  --profile-travel:       oklch(0.78 0.15 155);
-  --profile-screencast:   oklch(0.78 0.17 50);
+  /* Profile accents (в гамме брендбука, статусные оттенки) */
+  --profile-talking-head: var(--do);
+  --profile-fashion:      var(--chi);
+  --profile-travel:       #7E9B5A;
+  --profile-screencast:   var(--kinzoku);
   --profile-custom:       var(--mute-2);
 
-  /* ────────── Shadows (warm cinematic) ──────────
-   * Тёплый offset через rgba(20, 16, 12, ...) — даёт "уютную" глубину
-   * вместо чисто-чёрного дропа.
+  /* ────────── Shadows — ОТКЛЮЧЕНЫ (брендбук: глубина слоями, не тенями) ──────────
+   * Переменные сохранены для совместимости, но раскрываются в `none`.
+   * --shadow-gold заменён на акцентный 1px-бордер (свечение через линию).
    */
-  --shadow-xs: 0 1px 2px rgba(20, 16, 12, 0.40);
-  --shadow-sm: 0 2px 8px rgba(20, 16, 12, 0.45);
-  --shadow-md: 0 12px 28px rgba(20, 16, 12, 0.50);
-  --shadow-lg: 0 28px 56px rgba(20, 16, 12, 0.55);
-  --shadow-gold: 0 0 0 1px oklch(0.84 0.16 75 / 0.4),
-                 0 8px 24px oklch(0.84 0.16 75 / 0.18);
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-gold: 0 0 0 1px var(--accent-line);
 
-  /* ────────── Radii (мягкие, не острые, не pill) ────────── */
-  --radius-s: 8px;
-  --radius:   12px;
-  --radius-l: 18px;
-  --radius-xl: 24px;
+  /* ────────── Radii — прямые углы везде (брендбук) ────────── */
+  --radius-s: 0;
+  --radius:   0;
+  --radius-l: 0;
+  --radius-xl: 0;
 }
 
 * {
@@ -138,26 +197,18 @@ body {
   padding: 0;
   background: var(--ink);
   color: var(--paper);
-  font-family: var(--font-sans);
-  font-feature-settings: "ss01", "cv11";
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 1rem;
-  line-height: 1.55;
-  letter-spacing: -0.005em;
-  /* Subtle warm gradient на фоне — даёт "глубину" без явного градиента.
-     Радиальные пятна по углам моделируют lens vignette. */
+  line-height: 1.6;
+  letter-spacing: 0;
+  /* Пиксельная сетка поверх фона (брендбук §6.1) — тонкая латунная решётка
+     16×16px. Заменяет lens-vignette. Рендерится один раз глобально. */
   background-image:
-    radial-gradient(
-      ellipse 1200px 800px at 0% 0%,
-      oklch(0.20 0.020 75 / 0.18),
-      transparent 60%
-    ),
-    radial-gradient(
-      ellipse 1000px 600px at 100% 100%,
-      oklch(0.20 0.025 280 / 0.15),
-      transparent 60%
-    );
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 16px 16px;
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -189,7 +240,7 @@ button {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--ink-4);
-  border-radius: 12px;
+  border-radius: 0;
   border: 3px solid transparent;
   background-clip: padding-box;
 }
@@ -209,29 +260,27 @@ button {
  */
 :focus-visible {
   outline: 2px solid var(--focus);
-  outline-offset: 3px;
-  border-radius: var(--radius-s);
+  outline-offset: 2px;
+  border-radius: 0;
 }
 
 /* ────────── Type utilities ──────────
- * .display-serif / .serif остались для backward compat,
- * но теперь — sans display (Geist) с soft tracking.
+ * .display-serif / .serif — заголовки на Noto Serif JP (брендбук-display).
  */
 .mono {
   font-family: var(--font-mono);
-  font-feature-settings: "zero", "ss01";
+  font-feature-settings: "zero";
   letter-spacing: 0;
 }
 .serif,
 .display-serif {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.022em;
-  line-height: 1.08;
-  font-feature-settings: "ss01", "cv11";
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
 }
 .display-serif {
-  font-feature-settings: "ss01", "cv11", "tnum";
+  font-variant-numeric: tabular-nums;
 }
 .caps {
   text-transform: uppercase;
@@ -258,29 +307,23 @@ button {
 }
 
 /* ────────── Surfaces ──────────
- * surface-card: layered с subtle inner highlight.
- * Inner highlight = 1px тёплый стих сверху → даёт "кинематографический"
- * блик и читается как elevation, а не плоская карточка.
+ * Глубина — слой светлоты (Sumi поверх Kuro) + 1px-бордер. Без теней.
  */
 .surface-card {
   background: var(--ink-2);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.04),
-    var(--shadow-xs);
+  border: 1px solid var(--line);
+  border-radius: 0;
 }
 .surface-flush {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line);
   border-radius: 0;
 }
 .surface-raised {
   background: var(--ink-3);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--line);
+  border-radius: 0;
 }
 
 /* ────────── Hairlines ────────── */
@@ -306,105 +349,104 @@ button {
   align-items: center;
   gap: 6px;
   line-height: 1;
-  border-radius: var(--radius-s);
+  border-radius: 0;
   background: transparent;
   font-weight: 500;
 }
 .stamp.hot {
   color: var(--ember);
-  border-color: oklch(0.55 0.18 45);
-  background: oklch(0.30 0.08 45 / 0.25);
+  border-color: var(--chi);
+  background: var(--danger-soft);
 }
 .stamp.ok {
   color: var(--gold);
-  border-color: oklch(0.55 0.14 75);
-  background: oklch(0.30 0.06 75 / 0.25);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
 }
 .stamp.solid {
-  background: var(--paper);
+  background: var(--gold);
   color: var(--ink);
-  border-color: var(--paper);
+  border-color: var(--gold);
 }
 
-/* ────────── Buttons — Reelibra ──────────
- * .btn-primary теперь использует gold-accent вместо paper.
- * .btn-paper оставлен для нейтральных primary-actions.
- * Hover: shift-up + shadow + цветной ring (для accent buttons).
+/* ────────── Buttons — 色の道 ──────────
+ * Mono uppercase, прямые углы, заливка-анимация (без shift/shadow).
+ * Primary = акцент-обводка → hover заливается золотом.
  */
 .btn {
-  font-family: var(--font-sans);
+  font-family: var(--font-mono);
   font-weight: 500;
   font-size: 0.8125rem; /* ~14px при 17px base */
-  padding: 10px 16px;
-  border-radius: var(--radius-s);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 10px 18px;
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   transition:
-    background-color 0.15s ease,
-    color 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
   border: 1px solid transparent;
   white-space: nowrap;
-  letter-spacing: -0.005em;
 }
 .btn-primary {
-  background: var(--gold);
-  color: var(--accent-on-primary);
-  font-weight: 600;
+  background: transparent;
+  color: var(--gold);
+  border: 2px solid var(--gold);
+  font-weight: 700;
 }
 .btn-primary:hover {
-  background: var(--accent-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-gold);
+  background: var(--gold);
+  color: var(--ink);
 }
 .btn-primary:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-xs);
+  background: var(--gold-dim);
+  border-color: var(--gold-dim);
+  color: var(--ink);
 }
 .btn-paper {
-  background: var(--paper);
+  background: var(--gold);
   color: var(--ink);
-  font-weight: 600;
+  border-color: var(--gold);
+  font-weight: 700;
 }
 .btn-paper:hover {
-  background: var(--white);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  background: var(--kogane);
+  border-color: var(--kogane);
 }
 .btn-ghost {
   background: transparent;
-  color: var(--paper);
-  border-color: var(--line);
+  color: var(--mute-2);
+  border-color: var(--mute);
 }
 .btn-ghost:hover {
-  border-color: var(--mute);
-  background: var(--ink-2);
+  border-color: var(--paper);
+  color: var(--paper);
 }
 .btn-quiet {
   color: var(--mute-2);
   padding: 6px 10px;
 }
 .btn-quiet:hover {
-  color: var(--paper);
+  color: var(--gold);
   background: var(--ink-2);
 }
 .btn-danger {
-  background: var(--danger);
-  color: var(--paper);
-  font-weight: 600;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  font-weight: 700;
 }
 .btn-danger:hover {
-  background: oklch(0.78 0.20 25);
-  transform: translateY(-1px);
-  box-shadow: 0 0 0 1px oklch(0.72 0.19 25 / 0.4),
-              0 8px 24px oklch(0.72 0.19 25 / 0.18);
+  background: var(--danger);
+  color: var(--paper);
 }
 .btn-danger:active {
-  transform: translateY(0);
+  background: var(--danger);
+  color: var(--paper);
 }
 
 /* ────────── Kbd chip ────────── */
@@ -413,7 +455,7 @@ button {
   font-size: 0.6875rem;
   padding: 2px 6px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 0;
   color: var(--mute-2);
   background: var(--ink-2);
 }
@@ -423,7 +465,7 @@ button {
   position: relative;
   height: 6px;
   background: var(--ink-3);
-  border-radius: 3px;
+  border-radius: 0;
   overflow: hidden;
 }
 .range-track > span {
@@ -431,7 +473,7 @@ button {
   top: 0;
   bottom: 0;
   background: var(--gold);
-  border-radius: 3px;
+  border-radius: 0;
 }
 
 /* ────────── Divider label ────────── */
@@ -517,7 +559,6 @@ button {
   inset: 4px;
   border-radius: 50%;
   background: var(--ink-2);
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05);
 }
 .score-ring > span {
   position: relative;
@@ -534,7 +575,7 @@ button {
   background: linear-gradient(
     90deg,
     var(--gold) 0%,
-    var(--ember) 100%
+    var(--copper, var(--gold-dim)) 100%
   );
 }
 
@@ -543,7 +584,7 @@ button {
   position: relative;
   height: 52px;
   background: var(--ink-3);
-  border-radius: var(--radius-s);
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -663,14 +704,14 @@ input[type="datetime-local"],
 input[type="time"],
 textarea,
 select {
-  background: var(--ink-3);
+  background: var(--ink-2);
   color: var(--paper);
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-s);
-  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 10px 14px;
   font-size: 0.9375rem;
   line-height: 1.4;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.2s ease;
   width: 100%;
 }
 input[type="text"]:hover,
@@ -696,7 +737,6 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px oklch(0.84 0.16 75 / 0.18);
 }
 ::placeholder {
   color: var(--mute);
@@ -713,8 +753,8 @@ input[type="radio"] {
 
 /* ────────── Selection ────────── */
 ::selection {
-  background: oklch(0.84 0.16 75 / 0.35);
-  color: var(--paper);
+  background: var(--accent-line);
+  color: var(--ink);
 }
 
 /* ────────── Reduced motion ────────── */

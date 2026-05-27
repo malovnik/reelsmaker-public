@@ -10,6 +10,7 @@ import yaml
 
 from videomaker.core.logging import get_logger
 from videomaker.models.reel_plan import ReelPlan
+from videomaker.services.encoder_support import codec_stream_tag, resolve_video_codec
 from videomaker.services.media import (
     ExportPreset,
     ReelSegmentRender,
@@ -51,8 +52,18 @@ def load_presets(
 
     defaults = raw.get("defaults") or {}
     fps = int(defaults.get("fps", 30))
-    video_codec = str(defaults.get("video_codec", "hevc_videotoolbox"))
-    video_tag = str(defaults.get("video_tag", "hvc1"))
+    configured_codec = str(defaults.get("video_codec", "hevc_videotoolbox"))
+    configured_tag = str(defaults.get("video_tag", "hvc1"))
+    # Runtime-детект: VideoToolbox на macOS, software-фолбэк на Linux/Railway.
+    video_codec = resolve_video_codec(configured_codec)
+    video_tag = codec_stream_tag(video_codec, configured_tag)
+    if video_codec != configured_codec:
+        log.info(
+            "render_codec_fallback",
+            configured=configured_codec,
+            resolved=video_codec,
+            tag=video_tag,
+        )
     audio_codec = str(defaults.get("audio_codec", "aac"))
     audio_bitrate = str(defaults.get("audio_bitrate", "192k"))
     pix_fmt = str(defaults.get("pix_fmt", "yuv420p"))

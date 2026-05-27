@@ -1179,6 +1179,7 @@ async def _apply_visual_validator(
                 cache_dir=cfg.app_face_cache_dir,
                 models_dir=cfg.app_models_dir,
                 min_confidence=cfg.face_tracker_min_confidence,
+                timeout_sec=cfg.face_tracker_timeout_sec,
             )
         except FaceTrackerError as ft_exc:
             log.warning(

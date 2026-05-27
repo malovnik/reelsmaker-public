@@ -459,6 +459,7 @@ async def _prepare_face_tracking(
             cache_dir=settings.app_face_cache_dir,
             models_dir=settings.app_models_dir,
             min_confidence=settings.face_tracker_min_confidence,
+            timeout_sec=settings.face_tracker_timeout_sec,
         )
         log.info(
             "render_face_track_ready",

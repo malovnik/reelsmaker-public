@@ -23,12 +23,15 @@ class Settings(BaseSettings):
 
     # LLM providers
     gemini_api_key: str | None = None
-    # Gemini tier-матрица жёстко ограничена Flash-Lite вариантами
-    # (gemini-2.5-flash-lite / gemini-3.1-flash-lite-preview). Любые более
-    # дорогие модели (Flash, Pro, *-preview кроме Lite) запрещены по user
-    # constraint — pipeline физически не может их вызвать. Runtime override
-    # через PerformanceSettings.llm_tier_profile (fast | legacy).
+    # Gemini tier-матрица: pro / flash / flash_lite мапятся на реальные
+    # Gemini-модели. Дефолтный профиль (fast) использует Flash-Lite для всех
+    # tier (cost control); Pro/Flash — осознанный opt-in через UI-тоггл
+    # (PerformanceSettings.llm_tier_profile). Cold-cache всегда Flash-Lite.
     gemini_default_model: str = "gemini-2.5-flash-lite"
+    # Реальные модели для tier pro / flash. Flash-Lite берётся из
+    # llm_lite_variant (2.5-flash-lite | 3.1-flash-lite-preview).
+    gemini_pro_model: str = "gemini-2.5-pro"
+    gemini_flash_model: str = "gemini-2.5-flash"
     gemini_rate_limit_rpm: int = Field(default=60, ge=1, le=10000)
     # Gemini модели, которые можно выбрать в UploadWizard / Settings.
     # Только Lite-варианты: более дорогие модели запрещены по user constraint.
@@ -146,6 +149,12 @@ class Settings(BaseSettings):
     # min_confidence=0.5 — стандартный порог mediapipe face detection.
     face_tracker_sample_interval_sec: float = Field(default=0.3, gt=0.0, le=5.0)
     face_tracker_min_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+    # Hard-таймаут mediapipe-детекта в отдельном процессе. asyncio.to_thread
+    # непрерываем — sync mediapipe вешает worker (job 8a418e9b: CPU=0% после
+    # face_track_start). Детект вынесен в subprocess, при превышении процесс
+    # убивается, рендер продолжается на center-crop. 600s покрывает ~60-мин
+    # видео при 0.3s sampling с запасом.
+    face_tracker_timeout_sec: float = Field(default=600.0, gt=0.0, le=3600.0)
 
     # Reducer (Stage 5.4) LLM call params. max_tokens=16000 эмпирически
     # достаточно для ranked_cap=60 items (средний размер ответа ~8-12K).

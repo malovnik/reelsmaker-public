@@ -46,6 +46,11 @@ from videomaker.models.job import (
 )
 from videomaker.models.post_production import PostProductionConfig
 from videomaker.services import post_production_store, subtitle_store
+from videomaker.services.encoder_support import codec_stream_tag, resolve_video_codec
+from videomaker.services.filter_graph_builder import (
+    _build_encoder_args,
+    _build_loudnorm_stage,
+)
 from videomaker.services.jobs import JobService, get_job_service
 from videomaker.services.pipeline import run_pipeline_safe
 from videomaker.services.post_production_store import PresetNotFoundError
@@ -53,6 +58,10 @@ from videomaker.services.profile_detector import (
     ProfileSuggestion,
     detect_profile,
     estimate_face_coverage,
+)
+from videomaker.services.project_graph import (
+    AudioNormalizeSpec,
+    ExportPresetSpec,
 )
 from videomaker.services.transcribers.cache import TranscriptCache
 
@@ -1380,6 +1389,75 @@ class ExportResponse(BaseModel):
     download_url: str
 
 
+def _build_export_argv(
+    *,
+    source: Path,
+    output: Path,
+    bitrate_k: int,
+    target_lufs: float,
+    ffmpeg_path: str = "ffmpeg",
+) -> list[str]:
+    """Собирает ffmpeg argv для transcode готового рилса под export-preset.
+
+    Видео re-encode под preset bitrate (maxrate=1.4×, bufsize=2×) через
+    портируемый encoder-args билдер (``_build_encoder_args``), аудио — через
+    single-pass loudnorm (``_build_loudnorm_stage``) на target LUFS. Один вход,
+    без cuts: rendered-рилс уже собран, здесь только переупаковка под платформу.
+    """
+    resolved_codec = resolve_video_codec("h264_videotoolbox")
+    preset_spec = ExportPresetSpec(
+        aspect="source",
+        width=2,
+        height=2,
+        fps=30,
+        video_codec=resolved_codec,
+        video_tag=codec_stream_tag(resolved_codec, "avc1"),
+        video_bitrate=f"{bitrate_k}k",
+        video_maxrate=f"{int(bitrate_k * 1.4)}k",
+        video_bufsize=f"{bitrate_k * 2}k",
+        audio_codec="aac",
+        audio_bitrate="192k",
+        scale_filter="",
+        pix_fmt="yuv420p",
+    )
+    norm_spec = AudioNormalizeSpec(
+        enabled=True, target_lufs=target_lufs, two_pass=False
+    )
+    filter_parts: list[str] = []
+    audio_label = _build_loudnorm_stage(filter_parts, norm_spec, "0:a")
+    raw_encoder_args = _build_encoder_args(preset_spec)
+    # _build_encoder_args добавляет `-r <fps>`; для transcode сохраняем исходный
+    # fps рилса — выкидываем именно эту пару флаг+значение, не трогая остальное.
+    encoder_args: list[str] = []
+    skip_next = False
+    for arg in raw_encoder_args:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg == "-r":
+            skip_next = True
+            continue
+        encoder_args.append(arg)
+
+    argv: list[str] = [
+        ffmpeg_path,
+        "-y",
+        "-hide_banner",
+        "-nostdin",
+        "-i",
+        str(source),
+        "-filter_complex",
+        ";".join(filter_parts),
+        "-map",
+        "0:v",
+        "-map",
+        f"[{audio_label}]",
+        *encoder_args,
+        str(output),
+    ]
+    return argv
+
+
 @router.post("/{job_id}/reels/{reel_id}/export", response_model=ExportResponse)
 async def export_reel_with_preset(
     job_id: str,
@@ -1387,11 +1465,12 @@ async def export_reel_with_preset(
     preset: str,
     artifacts: ArtifactsManager = Depends(get_artifacts_manager),
 ) -> ExportResponse:
-    """Экспорт рилса с preset-специфичными encode-параметрами (T3.7).
+    """Экспорт рилса с preset-специфичным real-transcode (T3.7 / R5.1).
 
-    MVP: валидирует preset + наличие mp4, возвращает metadata и ссылку на
-    существующий файл через /api/v1/files. Full transcode по preset bitrate
-    — следующая итерация.
+    Перекодирует готовый рилс-mp4 под выбранный preset: видео re-encode на
+    preset bitrate (портируемый encoder через runtime-детект VideoToolbox →
+    libx264), аудио — loudnorm на target LUFS. Результат пишется в
+    ``reels/{reel_id}.{preset}.mp4``; ``download_url`` ведёт на него.
     """
     if preset not in EXPORT_PRESETS:
         raise HTTPException(
@@ -1399,18 +1478,67 @@ async def export_reel_with_preset(
             detail=f"unknown preset: {preset}",
         )
     _validate_reel_id(reel_id)
-    reel_path = _reel_artifact_path(artifacts.job_dir(job_id) / "reels", reel_id, ".mp4")
+    reels_dir = artifacts.job_dir(job_id) / "reels"
+    reel_path = _reel_artifact_path(reels_dir, reel_id, ".mp4")
     if not reel_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"reel mp4 not found for {reel_id}",
         )
     config = EXPORT_PRESETS[preset]
+    bitrate_k = int(config["bitrate_k"])
+    target_lufs = float(config["target_lufs"])
+    output_path = _reel_artifact_path(reels_dir, reel_id, f".{preset}.mp4")
+
+    argv = _build_export_argv(
+        source=reel_path,
+        output=output_path,
+        bitrate_k=bitrate_k,
+        target_lufs=target_lufs,
+    )
+    log.info(
+        "reel_export_transcode_start",
+        job_id=job_id,
+        reel_id=reel_id,
+        preset=preset,
+        bitrate_k=bitrate_k,
+        target_lufs=target_lufs,
+        output=str(output_path),
+    )
+    proc = await asyncio.create_subprocess_exec(
+        *argv,
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        output_path.unlink(missing_ok=True)
+        stderr_tail = stderr.decode("utf-8", "ignore")[-800:]
+        log.error(
+            "reel_export_transcode_failed",
+            job_id=job_id,
+            reel_id=reel_id,
+            preset=preset,
+            rc=proc.returncode,
+            stderr_tail=stderr_tail,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"export transcode failed (rc={proc.returncode})",
+        )
+    size_bytes = output_path.stat().st_size if output_path.exists() else 0
+    log.info(
+        "reel_export_transcode_done",
+        job_id=job_id,
+        reel_id=reel_id,
+        preset=preset,
+        size_mb=round(size_bytes / (1024 * 1024), 2),
+    )
     return ExportResponse(
         preset=preset,
-        bitrate_k=int(config["bitrate_k"]),
-        target_lufs=float(config["target_lufs"]),
-        download_url=f"/api/v1/files/{job_id}/reels/{reel_id}.mp4",
+        bitrate_k=bitrate_k,
+        target_lufs=target_lufs,
+        download_url=f"/api/v1/files/{job_id}/reels/{reel_id}.{preset}.mp4",
     )
 
 

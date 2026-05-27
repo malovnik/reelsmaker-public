@@ -213,6 +213,27 @@ class PublerClient:
             )
         return str(job_id)
 
+    async def delete_posts(self, post_ids: list[str]) -> list[str]:
+        """Удаляет посты из Publer-workspace (DELETE /posts?post_ids[]=...).
+
+        Принимает любые состояния, кроме уже опубликованных — для них Publer
+        вернёт ошибку (role/state restriction). Возвращает список реально
+        удалённых id (`deleted_ids` из ответа). Пустой `post_ids` → no-op.
+        """
+        if not post_ids:
+            return []
+        resp = await self._request(
+            "DELETE",
+            "/posts",
+            params=[("post_ids[]", pid) for pid in post_ids],
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        deleted = data.get("deleted_ids")
+        if deleted is None and isinstance(data.get("data"), dict):
+            deleted = data["data"].get("deleted_ids")
+        return [str(x) for x in (deleted or [])]
+
     async def get_job_status(self, job_id: str) -> PublerJobStatus:
         resp = await self._request("GET", f"/job_status/{job_id}")
         resp.raise_for_status()

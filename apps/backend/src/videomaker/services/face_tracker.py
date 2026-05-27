@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import multiprocessing as mp
 import shutil
 import tempfile
 import urllib.error
@@ -218,6 +219,7 @@ async def track_faces(
     cache_dir: Path | None = None,
     models_dir: Path,
     min_confidence: float = 0.5,
+    timeout_sec: float = 600.0,
     force_refresh: bool = False,
 ) -> FaceTrackResult:
     """Запускает face detection на видео и возвращает результат.
@@ -229,6 +231,8 @@ async def track_faces(
         models_dir: каталог для tflite-модели mediapipe. Auto-download при
             первом запуске. Обычно `settings.app_models_dir`.
         min_confidence: порог уверенности mediapipe (default 0.5).
+        timeout_sec: hard-таймаут детекта в subprocess. При превышении процесс
+            убивается и поднимается FaceTrackerError (фолбэк на center-crop).
         force_refresh: игнорировать кэш и пересчитать.
     """
 
@@ -269,16 +273,20 @@ async def track_faces(
         video_hash=video_hash[:12],
         duration_sec=round(info.duration_sec, 1),
         sample_interval_sec=sample_interval_sec,
+        timeout_sec=timeout_sec,
     )
     tmp_dir = Path(tempfile.mkdtemp(prefix="face_track_"))
     try:
         frames = await _extract_frames(video_path, sample_interval_sec, tmp_dir)
-        detections = await asyncio.to_thread(
-            _detect_faces_in_frames,
+        # Process-изоляция: mediapipe гоняется в отдельном процессе с hard-kill.
+        # asyncio.to_thread непрерываем — зависший mediapipe держал бы worker
+        # вечно (job 8a418e9b). Subprocess убиваем по таймауту.
+        detections = await _detect_faces_in_subprocess(
             frames,
             sample_interval_sec,
             min_confidence,
             model_path,
+            timeout_sec,
         )
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -405,6 +413,93 @@ def _detect_faces_in_frames(
             )
 
     return detections
+
+
+def _detect_faces_worker(
+    queue: mp.Queue[tuple[bool, Any]],
+    frames: list[Path],
+    sample_interval_sec: float,
+    min_confidence: float,
+    model_path: Path,
+) -> None:
+    """Process-entrypoint: гоняет mediapipe-детект и кладёт результат в queue.
+
+    Должна быть module-level (picklable для spawn). При успехе кладёт
+    ``(True, detections)``, при исключении — ``(False, repr(exc))``. Сам процесс
+    живёт изолированно: при hang родитель его убивает (terminate/kill), не
+    дожидаясь — thread-pool worker родителя не блокируется.
+    """
+
+    try:
+        detections = _detect_faces_in_frames(
+            frames, sample_interval_sec, min_confidence, model_path
+        )
+        queue.put((True, detections))
+    except BaseException as exc:
+        queue.put((False, repr(exc)))
+
+
+async def _detect_faces_in_subprocess(
+    frames: list[Path],
+    sample_interval_sec: float,
+    min_confidence: float,
+    model_path: Path,
+    timeout_sec: float,
+) -> list[FrameDetection]:
+    """Запускает mediapipe-детект в отдельном ПРОЦЕССЕ с hard-таймаутом и kill.
+
+    ``asyncio.to_thread`` непрерываем: зависший sync mediapipe держит worker
+    вечно (job 8a418e9b). Процесс же убиваем — terminate(), затем kill() если
+    не отвечает. При таймауте/краше процесса/ошибке внутри — поднимаем
+    ``FaceTrackerError``, который ловит фолбэк-путь рендера (center-crop).
+    """
+
+    if not frames:
+        return []
+
+    ctx = mp.get_context("spawn")
+    queue: mp.Queue[tuple[bool, Any]] = ctx.Queue()
+    proc = ctx.Process(
+        target=_detect_faces_worker,
+        args=(queue, frames, sample_interval_sec, min_confidence, model_path),
+        daemon=True,
+    )
+    proc.start()
+
+    def _kill_process() -> None:
+        if proc.is_alive():
+            proc.terminate()
+            proc.join(timeout=5.0)
+        if proc.is_alive():
+            proc.kill()
+            proc.join(timeout=5.0)
+
+    try:
+        # Ожидаем готовности queue в thread-pool, но с hard-таймаутом на уровне
+        # asyncio — даже если get() висит, мы выходим и убиваем процесс.
+        ok, payload = await asyncio.wait_for(
+            asyncio.to_thread(queue.get),
+            timeout=timeout_sec,
+        )
+    except TimeoutError as exc:
+        await asyncio.to_thread(_kill_process)
+        log.warning(
+            "face_track_timeout_killed",
+            timeout_sec=timeout_sec,
+            frames=len(frames),
+        )
+        raise FaceTrackerError(
+            f"mediapipe detect timed out after {timeout_sec}s, process killed"
+        ) from exc
+    finally:
+        # Подчищаем процесс в любом исходе (успех/ошибка), чтобы не оставить
+        # зомби и освободить queue-feeder thread.
+        await asyncio.to_thread(_kill_process)
+        queue.close()
+
+    if not ok:
+        raise FaceTrackerError(f"mediapipe detect failed in subprocess: {payload}")
+    return payload
 
 
 async def ensure_model(models_dir: Path) -> Path:

@@ -476,7 +476,7 @@ class PerformanceSettings(BaseModel):
 
     # T2.8 Screencast auto-zoom + deictic trigger layer
     screencast_cursor_zoom_enabled: bool = Field(
-        default=True,
+        default=False,
         description="T2.8 — для profile=screencast: auto-zoom по курсору с "
         "spring smoothing (damped harmonic oscillator).",
     )

@@ -8,7 +8,6 @@ Thin REST facade поверх ``services/publer`` (PublerClient, scheduler_servi
 from __future__ import annotations
 
 import json
-import logging
 from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from videomaker.core.artifacts import ArtifactsManager
 from videomaker.core.config import Settings, get_settings
 from videomaker.core.db import session_scope
+from videomaker.core.logging import get_logger
 from videomaker.models.job import Artifact, ArtifactKind
 from videomaker.models.reel_plan import ReelPlan
 from videomaker.models.scheduler import (
@@ -48,7 +48,7 @@ from videomaker.services.publer.scheduler_service import build_campaign_from_poo
 from videomaker.services.publer.schemas import PublerAccount
 
 router = APIRouter(prefix="/scheduler", tags=["scheduler"])
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 # ────────────────────────── DTOs ──────────────────────────
@@ -717,12 +717,23 @@ async def patch_assignment(
 @router.post(
     "/assignments/{assignment_id}/cancel", response_model=AssignmentRead
 )
-async def cancel_assignment(assignment_id: int) -> AssignmentRead:
-    """Отменить assignment — флипает локальный status в ``cancelled``.
+async def cancel_assignment(
+    assignment_id: int,
+    settings: Settings = Depends(get_settings),
+) -> AssignmentRead:
+    """Отменить assignment с реальным отзывом поста в Publer.
 
-    Удаление на стороне Publer (DELETE /posts/{publer_post_id}) сейчас не
-    реализовано — появится в Task 8 (delivery worker). Локальный статус
-    ``cancelled`` не блокирует worker от retry старого assignment.
+    Поведение по состоянию:
+    * ``published`` — пост уже опубликован, отозвать нельзя → честный 409
+      ("нельзя отозвать опубликованное"). Локальный статус НЕ меняем.
+    * ``cancelled`` — идемпотентно возвращаем как есть.
+    * есть ``publer_post_id`` и пост ещё не опубликован → ``DELETE /posts``
+      на стороне Publer, затем локальный статус ``cancelled``.
+    * только ``publer_job_id`` без ``publer_post_id`` (запланирован, но id
+      поста ещё не сверен) → отозвать по документированному API нельзя без
+      id поста → честный 409, локальный статус НЕ трогаем.
+    * нет publer-id (draft/queued, в Publer не отправлялось) → отзывать
+      нечего, просто флипаем локальный статус в ``cancelled``.
     """
     async with session_scope() as db:
         row = await scheduler_campaigns_store.get_assignment(db, assignment_id)
@@ -731,6 +742,65 @@ async def cancel_assignment(assignment_id: int) -> AssignmentRead:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"assignment {assignment_id} not found",
             )
+
+        if row.status == AssignmentStatus.cancelled.value:
+            return AssignmentRead.from_row(row)
+
+        if row.status == AssignmentStatus.published.value:
+            log.info(
+                "assignment_cancel_refused_published",
+                assignment_id=assignment_id,
+                publer_post_id=row.publer_post_id,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="нельзя отозвать опубликованное",
+            )
+
+        if row.publer_post_id:
+            try:
+                async with PublerClient(settings) as client:
+                    deleted = await client.delete_posts([row.publer_post_id])
+            except PublerClientError as exc:
+                log.warning(
+                    "assignment_cancel_publer_delete_failed",
+                    assignment_id=assignment_id,
+                    publer_post_id=row.publer_post_id,
+                    error=str(exc),
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=(
+                        "не удалось отозвать пост в Publer — статус не изменён, "
+                        f"повторите попытку: {exc}"
+                    ),
+                ) from exc
+            log.info(
+                "assignment_cancel_publer_deleted",
+                assignment_id=assignment_id,
+                publer_post_id=row.publer_post_id,
+                deleted_ids=deleted,
+            )
+        elif row.publer_job_id:
+            log.info(
+                "assignment_cancel_refused_unresolved",
+                assignment_id=assignment_id,
+                publer_job_id=row.publer_job_id,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "пост запланирован в Publer, но его id ещё не сверён — "
+                    "отозвать сейчас нельзя, повторите позже"
+                ),
+            )
+        else:
+            log.info(
+                "assignment_cancel_local_only",
+                assignment_id=assignment_id,
+                prev_status=row.status,
+            )
+
         row.status = AssignmentStatus.cancelled.value
         await db.flush()
         await db.refresh(row)

@@ -158,7 +158,7 @@ export function Tooltip({
         "rounded-none border border-[var(--line)] border-l-2 border-l-[var(--gold)] bg-[var(--ink-2)] px-4 py-3",
         coarse
           ? "mt-1 w-full"
-          : "fixed z-[300] shadow-[0_8px_24px_rgba(0,0,0,0.55)] motion-safe:animate-[fade-in_0.15s_ease-out]",
+          : "fixed z-[300] motion-safe:animate-[fade-in_0.15s_ease-out]",
       )}
     >
       <p className="text-[0.875rem] font-semibold leading-snug text-[var(--paper)]">{what}</p>

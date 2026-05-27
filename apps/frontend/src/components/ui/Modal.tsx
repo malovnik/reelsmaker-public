@@ -112,7 +112,7 @@ export function Modal({
       onKeyDown={handleKeyDown}
     >
       <div
-        className="absolute inset-0 bg-[oklch(0.10_0_0/0.7)] backdrop-blur-sm"
+        className="absolute inset-0 bg-[var(--surface-overlay)] backdrop-blur-sm"
         aria-hidden="true"
         onClick={closeOnOverlay ? onClose : undefined}
       />

@@ -181,7 +181,7 @@
 
 ## Финальный этап
 
-- `/Users/malovnik/Documents/Dev/videomaker/docs/production-features-plan.md` — пометить Status: DONE.
+- `<source-repo>/docs/production-features-plan.md` — пометить Status: DONE.
 - Serena memory для каждой из 4 фич.
 - `last-session-summary.md` — автоген при PreCompact, не трогать.
 - Вывести стоп-фразу.

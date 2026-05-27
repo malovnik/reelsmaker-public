@@ -4,7 +4,7 @@
 **Completion promise:** `REELIBRA-REDESIGN-COMPLETE`
 
 ## Concept source
-Handoff: `/Users/malovnik/Documents/Dev/videomaker/Референсы/handoff-unpacked/untitled/project`
+Handoff: `<source-repo>/Референсы/handoff-unpacked/untitled/project`
 
 Reelibra design system:
 - Palette OKLCH: ink/ink-2/ink-3/ink-4 surfaces, paper/paper-dim text, gold/ember/focus accents, line/line-soft borders

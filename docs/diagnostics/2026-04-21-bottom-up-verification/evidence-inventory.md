@@ -36,8 +36,8 @@
   ```
 
 - **Tools:**
-  - `uv`: `0.9.11 (8d8aabb88 2025-11-20)` at `/Users/malovnik/.local/bin/uv`
-  - `pnpm`: `10.20.0` at `/Users/malovnik/.npm-global/bin/pnpm`
+  - `uv`: `0.9.11 (8d8aabb88 2025-11-20)` at `~/.local/bin/uv`
+  - `pnpm`: `10.20.0` at `~/.npm-global/bin/pnpm`
   - `ffmpeg`: `7.1.1` at `/opt/homebrew/bin/ffmpeg` (`ffmpeg version 7.1.1 Copyright (c) 2000-2025 the FFmpeg developers`)
 
 ## Task 5a results (job b6809dc1-6687-4117-9751-8ede39a85d6d, 13 reels on disk)

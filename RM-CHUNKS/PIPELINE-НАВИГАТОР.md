@@ -1,7 +1,7 @@
 # Навигатор Pipeline: videomaker-рефакторинг
 
 > Проект: **videomaker** — локальный веб-сервис нарезки длинных видео в рилсы/шортсы 9:16 на MacBook Pro M5.
-> Корень кода: `/Users/malovnik/Documents/Dev/videomaker/`
+> Корень кода: `<source-repo>/`
 > Режим: **Ralph Loop** (последовательно, без параллельных субагентов без явного разрешения).
 > Промпт: `PIPELINE-RALPH-PROMPT.md`
 

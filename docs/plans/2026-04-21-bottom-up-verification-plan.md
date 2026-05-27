@@ -8,7 +8,7 @@
 
 **Tech Stack:** uv (Python 3.12) + FastAPI backend, Next.js 16 + pnpm frontend, SQLite для jobs, ffmpeg для render, Gemini для LLM, mlx-whisper для STT. Запуск — `./run.sh` из корня проекта.
 
-**Working directory:** `/Users/malovnik/Documents/Dev/videomaker` (все относительные пути относительно корня проекта).
+**Working directory:** `<source-repo>` (все относительные пути относительно корня проекта).
 
 ---
 
@@ -50,7 +50,7 @@
 
 Run:
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker
+cd <source-repo>
 git branch --show-current
 git log --oneline -5
 git status --short
@@ -190,7 +190,7 @@ echo "Please provide absolute path to a 60-900 sec video via chat."
 
 Run:
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker
+cd <source-repo>
 mkdir -p docs/diagnostics/2026-04-21-bottom-up-verification
 ./run.sh > docs/diagnostics/2026-04-21-bottom-up-verification/backend-startup.log 2>&1 &
 RUN_PID=$!

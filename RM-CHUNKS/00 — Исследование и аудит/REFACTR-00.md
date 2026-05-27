@@ -36,7 +36,7 @@
 
 ### 00.1 Активировать Serena для проекта
 
-- [x] `activate_project('/Users/malovnik/Documents/Dev/videomaker/')` в Serena.
+- [x] `activate_project('<source-repo>/')` в Serena.
 - [x] `check_onboarding_performed` + `list_memories` — проверить что проект проиндексирован.
 - [x] Если нет — запустить `onboarding`.
 

@@ -155,11 +155,11 @@ Pattern interrupt, визуал + текст-дубль. Типы:
 - [ ] **Step 2: Commit**
 
 ```bash
-git -C /Users/malovnik/Documents/Dev/videomaker add apps/backend/src/videomaker/services/prompts_data/viral_2026.md
-git -C /Users/malovnik/Documents/Dev/videomaker commit -m "feat(viral_2026): system prompt с manifest и JSON schema
+git -C <source-repo> add apps/backend/src/videomaker/services/prompts_data/viral_2026.md
+git -C <source-repo> commit -m "feat(viral_2026): system prompt с manifest и JSON schema
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-git -C /Users/malovnik/Documents/Dev/videomaker push origin feat/glm-provider
+git -C <source-repo> push origin feat/glm-provider
 ```
 
 ---
@@ -197,25 +197,25 @@ VIRAL_2026_PROMPT = (files(_PROMPTS_PKG) / "viral_2026.md").read_text(encoding="
 
 Run:
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker/apps/backend && uv run ruff check src/videomaker/services/prompts.py && uv run pyright src/videomaker/services/prompts.py
+cd <source-repo>/apps/backend && uv run ruff check src/videomaker/services/prompts.py && uv run pyright src/videomaker/services/prompts.py
 ```
 Expected: `All checks passed` + `0 errors, 0 warnings, 0 informations`
 
 - [ ] **Step 4: Smoke test import**
 
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker/apps/backend && uv run python -c "from videomaker.services.prompts import PromptKey, DEFAULT_PROMPTS; assert PromptKey.viral_2026 in DEFAULT_PROMPTS; print('OK len=', len(DEFAULT_PROMPTS[PromptKey.viral_2026]))"
+cd <source-repo>/apps/backend && uv run python -c "from videomaker.services.prompts import PromptKey, DEFAULT_PROMPTS; assert PromptKey.viral_2026 in DEFAULT_PROMPTS; print('OK len=', len(DEFAULT_PROMPTS[PromptKey.viral_2026]))"
 ```
 Expected: `OK len= <число >5000>`
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git -C /Users/malovnik/Documents/Dev/videomaker add apps/backend/src/videomaker/services/prompts.py
-git -C /Users/malovnik/Documents/Dev/videomaker commit -m "feat(viral_2026): PromptKey enum + DEFAULT_PROMPTS registration
+git -C <source-repo> add apps/backend/src/videomaker/services/prompts.py
+git -C <source-repo> commit -m "feat(viral_2026): PromptKey enum + DEFAULT_PROMPTS registration
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-git -C /Users/malovnik/Documents/Dev/videomaker push origin feat/glm-provider
+git -C <source-repo> push origin feat/glm-provider
 ```
 
 ---
@@ -262,17 +262,17 @@ NarrativeMode = Literal["bottom_up", "chaptered", "map_reduce", "viral_2026"]
 - [ ] **Step 4: Build gates**
 
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker/apps/backend && uv run ruff check src/videomaker/models/runtime_settings.py && uv run pyright src/videomaker/models/runtime_settings.py
+cd <source-repo>/apps/backend && uv run ruff check src/videomaker/models/runtime_settings.py && uv run pyright src/videomaker/models/runtime_settings.py
 ```
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git -C /Users/malovnik/Documents/Dev/videomaker add apps/backend/src/videomaker/models/runtime_settings.py
-git -C /Users/malovnik/Documents/Dev/videomaker commit -m "feat(runtime): narrative_mode=viral_2026 + face_tracker_enabled toggle
+git -C <source-repo> add apps/backend/src/videomaker/models/runtime_settings.py
+git -C <source-repo> commit -m "feat(runtime): narrative_mode=viral_2026 + face_tracker_enabled toggle
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-git -C /Users/malovnik/Documents/Dev/videomaker push origin feat/glm-provider
+git -C <source-repo> push origin feat/glm-provider
 ```
 
 ---
@@ -654,7 +654,7 @@ async def build_viral_arcs(
 - [ ] **Step 3: Проверить что `llm_client` / `tier_resolver` / `rate_limiter` API существует**
 
 ```bash
-grep -n "async def generate_json\|def resolve_tier\|def get_rate_limiter\|def get_llm_client" /Users/malovnik/Documents/Dev/videomaker/apps/backend/src/videomaker/services/*.py | head -10
+grep -n "async def generate_json\|def resolve_tier\|def get_rate_limiter\|def get_llm_client" <source-repo>/apps/backend/src/videomaker/services/*.py | head -10
 ```
 
 Если сигнатуры различаются — адаптировать код под реальные. Например если `generate_json` называется иначе или принимает другие параметры, либо если resolve_tier возвращает object другой формы — поправить. Не изобретать — ОБЯЗАТЕЛЬНО смотреть как делают existing services (напр. `narrative/chunk_scorer.py`).
@@ -662,17 +662,17 @@ grep -n "async def generate_json\|def resolve_tier\|def get_rate_limiter\|def ge
 - [ ] **Step 4: Build gates**
 
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker/apps/backend && uv run ruff check src/videomaker/services/viral_arc_builder.py && uv run pyright src/videomaker/services/viral_arc_builder.py
+cd <source-repo>/apps/backend && uv run ruff check src/videomaker/services/viral_arc_builder.py && uv run pyright src/videomaker/services/viral_arc_builder.py
 ```
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git -C /Users/malovnik/Documents/Dev/videomaker add apps/backend/src/videomaker/services/viral_arc_builder.py
-git -C /Users/malovnik/Documents/Dev/videomaker commit -m "feat(viral_2026): chunked LLM builder — parallel 20K chunks + IoU dedup
+git -C <source-repo> add apps/backend/src/videomaker/services/viral_arc_builder.py
+git -C <source-repo> commit -m "feat(viral_2026): chunked LLM builder — parallel 20K chunks + IoU dedup
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-git -C /Users/malovnik/Documents/Dev/videomaker push origin feat/glm-provider
+git -C <source-repo> push origin feat/glm-provider
 ```
 
 ---
@@ -769,17 +769,17 @@ async def _run_viral_2026_branch(
 - [ ] **Step 3: Build gates**
 
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker/apps/backend && uv run ruff check src/videomaker/services/pipeline_stages/analysis.py && uv run pyright src/videomaker/services/pipeline_stages/analysis.py
+cd <source-repo>/apps/backend && uv run ruff check src/videomaker/services/pipeline_stages/analysis.py && uv run pyright src/videomaker/services/pipeline_stages/analysis.py
 ```
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git -C /Users/malovnik/Documents/Dev/videomaker add apps/backend/src/videomaker/services/pipeline_stages/analysis.py
-git -C /Users/malovnik/Documents/Dev/videomaker commit -m "feat(viral_2026): analysis.py branching — bypass Kartoziya 9-stage
+git -C <source-repo> add apps/backend/src/videomaker/services/pipeline_stages/analysis.py
+git -C <source-repo> commit -m "feat(viral_2026): analysis.py branching — bypass Kartoziya 9-stage
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-git -C /Users/malovnik/Documents/Dev/videomaker push origin feat/glm-provider
+git -C <source-repo> push origin feat/glm-provider
 ```
 
 ---
@@ -823,14 +823,14 @@ from videomaker.services.runtime_settings_store import get_performance_settings
 - [ ] **Step 3: Build gates**
 
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker/apps/backend && uv run ruff check src/videomaker/services/pipeline_stages/render.py && uv run pyright src/videomaker/services/pipeline_stages/render.py
+cd <source-repo>/apps/backend && uv run ruff check src/videomaker/services/pipeline_stages/render.py && uv run pyright src/videomaker/services/pipeline_stages/render.py
 ```
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git -C /Users/malovnik/Documents/Dev/videomaker add apps/backend/src/videomaker/services/pipeline_stages/render.py
-git -C /Users/malovnik/Documents/Dev/videomaker commit -m "fix(face_track): conditional через face_tracker_enabled (default OFF)
+git -C <source-repo> add apps/backend/src/videomaker/services/pipeline_stages/render.py
+git -C <source-repo> commit -m "fix(face_track): conditional через face_tracker_enabled (default OFF)
 
 Hardcode 'v0.7 всегда' заменён на opt-in toggle. Mediapipe на M-series
 может зависать (наблюдалось в jobs 8a418e9b). Default OFF — для 95%
@@ -838,7 +838,7 @@ Hardcode 'v0.7 всегда' заменён на opt-in toggle. Mediapipe на M
 работают без них.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-git -C /Users/malovnik/Documents/Dev/videomaker push origin feat/glm-provider
+git -C <source-repo> push origin feat/glm-provider
 ```
 
 ---
@@ -891,18 +891,18 @@ type NarrativeMode = "bottom_up" | "chaptered" | "map_reduce" | "viral_2026";
 - [ ] **Step 4: Build gates**
 
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker/apps/frontend && npx tsc --noEmit -p tsconfig.json 2>&1 | tail -15
+cd <source-repo>/apps/frontend && npx tsc --noEmit -p tsconfig.json 2>&1 | tail -15
 ```
 Expected: 0 errors.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git -C /Users/malovnik/Documents/Dev/videomaker add apps/frontend/src/components/settings/performance-groups/NarrativeModeGroup.tsx apps/frontend/src/components/settings/performance-groups/MotionGroup.tsx apps/frontend/src/lib/api/settings.ts
-git -C /Users/malovnik/Documents/Dev/videomaker commit -m "feat(ui): viral_2026 narrative mode + face_tracker toggle
+git -C <source-repo> add apps/frontend/src/components/settings/performance-groups/NarrativeModeGroup.tsx apps/frontend/src/components/settings/performance-groups/MotionGroup.tsx apps/frontend/src/lib/api/settings.ts
+git -C <source-repo> commit -m "feat(ui): viral_2026 narrative mode + face_tracker toggle
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-git -C /Users/malovnik/Documents/Dev/videomaker push origin feat/glm-provider
+git -C <source-repo> push origin feat/glm-provider
 ```
 
 ---
@@ -920,16 +920,16 @@ curl -sS http://127.0.0.1:8000/api/v1/health 2>/dev/null | head -3
 
 Если отдаёт 404/connection refused → запустить:
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker && ./run.sh >/tmp/run-ralph.log 2>&1 &
+cd <source-repo> && ./run.sh >/tmp/run-ralph.log 2>&1 &
 ```
 Подождать 45 сек. Повторить health check до успеха.
 
 - [ ] **Step 2: Выбрать короткое тестовое видео**
 
 ```bash
-for d in /Users/malovnik/Documents/Dev/videomaker/data/artifacts/*/text/cleaned_transcript.json; do
+for d in <source-repo>/data/artifacts/*/text/cleaned_transcript.json; do
   JOB_ID=$(basename $(dirname $(dirname $d)))
-  UPLOAD_DIR=/Users/malovnik/Documents/Dev/videomaker/data/uploads/$JOB_ID
+  UPLOAD_DIR=<source-repo>/data/uploads/$JOB_ID
   if [ -d "$UPLOAD_DIR" ]; then
     SOURCE=$(ls $UPLOAD_DIR/*.mp4 2>/dev/null | head -1)
     if [ -n "$SOURCE" ]; then
@@ -975,8 +975,8 @@ done
 - [ ] **Step 6: Проверить reel_plan.json**
 
 ```bash
-cat /Users/malovnik/Documents/Dev/videomaker/data/artifacts/$NEW_JOB_ID/text/analysis_summary.json | python3 -m json.tool
-cat /Users/malovnik/Documents/Dev/videomaker/data/artifacts/$NEW_JOB_ID/text/reel_plan.json | python3 -c "import json,sys;d=json.load(sys.stdin);print('reel_count:', len(d['reels']));print('sample:', d['reels'][0] if d['reels'] else None)"
+cat <source-repo>/data/artifacts/$NEW_JOB_ID/text/analysis_summary.json | python3 -m json.tool
+cat <source-repo>/data/artifacts/$NEW_JOB_ID/text/reel_plan.json | python3 -c "import json,sys;d=json.load(sys.stdin);print('reel_count:', len(d['reels']));print('sample:', d['reels'][0] if d['reels'] else None)"
 ```
 
 Expected: `narrative_mode: "viral_2026"` в analysis_summary; `reel_count >= 5`; sample reel содержит `hook`, `segments` с `source_start`/`source_end`.
@@ -1000,8 +1000,8 @@ Expected: HTML output — frontend поднят и отдаёт.
 Обновить этот план — отметить все tasks checkbox'ами `[x]`. Commit:
 
 ```bash
-git -C /Users/malovnik/Documents/Dev/videomaker add docs/plans/2026-04-22-viral-arc-2026-pipeline.md
-git -C /Users/malovnik/Documents/Dev/videomaker commit -m "docs(viral_2026): plan checked off — e2e smoke успешен
+git -C <source-repo> add docs/plans/2026-04-22-viral-arc-2026-pipeline.md
+git -C <source-repo> commit -m "docs(viral_2026): plan checked off — e2e smoke успешен
 
 - Reel count: <N>
 - Avg composite_score: <X>
@@ -1009,7 +1009,7 @@ git -C /Users/malovnik/Documents/Dev/videomaker commit -m "docs(viral_2026): pla
 - Face_track conditional: confirmed
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-git -C /Users/malovnik/Documents/Dev/videomaker push origin feat/glm-provider
+git -C <source-repo> push origin feat/glm-provider
 ```
 
 ---

@@ -14,15 +14,15 @@
 ### 1.1 Email владельца в коде
 - `apps/backend/pyproject.toml:8` — `{ name = "malovnik", email = "<redacted-email>" }`. Реальный email в публичном пакете. Заменить на нейтральное authors или убрать email.
 
-### 1.2 Локальные пути `/Users/malovnik/...` — 116 вхождений в 24 файлах
+### 1.2 Локальные пути `~/...` — 116 вхождений в 24 файлах
 Раскрывают username, структуру личного диска, путь к Obsidian-ваулту и приватным планам.
-- **Код/конфиг:** `README.md:7` (`/Users/malovnik/.claude/plans/...`), `CONTEXT.md:55`.
+- **Код/конфиг:** `README.md:7` (`~/.claude`), `CONTEXT.md:55`.
 - **Документация:** `docs/guide.md`, `docs/plans/2026-04-2*.md` (×4), `docs/diagnostics/.../evidence-inventory.md` (раскрывает `~/.local/bin`, `~/.npm-global`), `docs/superpowers/plans/*`, `docs/top-down-e2e-validation-guide.md`, `docs/vision-profiles-redesign-task.md`, `docs/production-features-plan.md`, `docs/reelibra-redesign-roadmap.md`, `idea.md`.
 - **RM-CHUNKS/** (×8 файлов): `task.md`, `README.md`, `PIPELINE-RALPH-PROMPT.md`, `PIPELINE-НАВИГАТОР.md`, `00 — .../00-АУДИТ.md`, `REFACTR-00.md`.
 - **_orchestration/**: `00-ROADMAP.md`, `phase12-final-validation/c1-v2-frontend.md`.
 - Особо чувствительно: путь к Obsidian-ваулту `…/malovnik-obsidian/🤖 ИИ/Софт/looper-tmux` и `…/😎 Бизнес/БрендБук` (раскрывает приватную организацию рабочих файлов).
 
-Рекомендация: глобальная замена `/Users/malovnik/Documents/Dev/videomaker` → относительные пути или `<repo-root>`; убрать упоминания ваулта/`.claude/plans` целиком.
+Рекомендация: глобальная замена `<source-repo>` → относительные пути или `<repo-root>`; убрать упоминания ваулта/`.claude/plans` целиком.
 
 ### 1.3 Реальное имя владельца «Никита / Малов Никита»
 Раскрывает личность заказчика как single-user. Вхождения:
@@ -66,14 +66,14 @@
 ## 6. _orchestration отчёты — секретов нет
 
 - Все упоминания `API_KEY/secret/token` — это **имена env-переменных и инструкции** (`DEEPGRAM_API_KEY`, `mask_secrets` processor, тестовая строка `sk-abcdef123456789012345` как пример маскирования). Реальных значений ключей ни один агент не процитировал.
-- Приватные данные в отчётах = те же имя «Никита» и пути `/Users/malovnik` (учтены в разделе 1).
+- Приватные данные в отчётах = те же имя «Никита» и пути `~` (учтены в разделе 1).
 
 ---
 
 ## ЧЕК-ЛИСТ ПЕРЕД PUBLIC
 
 1. [ ] `apps/backend/pyproject.toml` — убрать реальный email (1.1).
-2. [ ] Глобально заменить `/Users/malovnik/...` → относительные/`<repo-root>`; удалить ссылки на `.claude/plans` и Obsidian-ваулт (1.2) — 24 файла.
+2. [ ] Глобально заменить `~/...` → относительные/`<repo-root>`; удалить ссылки на `.claude/plans` и Obsidian-ваулт (1.2) — 24 файла.
 3. [ ] Заменить «Никита / Малов Никита» → «владелец/single-user» в коде (`reels_composer.py`, `prompts.py`) и доках (1.3).
 4. [ ] Заменить мокап-хэндлы `@nikita*` в `d5-screens.md` (1.4) — опционально.
 5. [x] Медиа/БД/`data/` не трекаются — OK.

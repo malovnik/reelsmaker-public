@@ -1,6 +1,6 @@
 # C1-V2 Frontend Final Integrity Validation (cycle 1/3)
 
-Path: `/Users/malovnik/Documents/Dev/reelsmaker-public/apps/frontend`
+Path: `apps/frontend`
 Date: 2026-05-27
 
 ## VERDICT: PASS

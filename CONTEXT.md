@@ -52,7 +52,7 @@
 - Orchestration: один процесс vs worker queue (celery/arq/redis) — для локального приложения скорее всего хватит fastapi + background tasks, но проверить устойчивость на длинных видео.
 
 ## Что переиспользовать из universal-rag
-Репозиторий: `/Users/malovnik/Documents/Dev/universal-rag/`
+Репозиторий: `~/Documents/Dev/universal-rag/`
 - `packages/backend/app/services/card_creator.py` — паттерн каскадных LLM-проходов (1084 строки, хорошо декомпозирован).
 - `packages/backend/app/services/prompts.py` — структура промптов.
 - `packages/backend/app/services/process.py` — оркестрация стадий.

@@ -72,14 +72,14 @@ Frontend:
 
 Команда:
 ```bash
-cat /Users/malovnik/Documents/Dev/videomaker/apps/backend/src/videomaker/services/filter_graph_builder.py
+cat <source-repo>/apps/backend/src/videomaker/services/filter_graph_builder.py
 ```
 
 - [ ] **Step 2: Прочитать ProjectRenderer**
 
 Команда:
 ```bash
-sed -n '99,300p' /Users/malovnik/Documents/Dev/videomaker/apps/backend/src/videomaker/services/project_renderer.py
+sed -n '99,300p' <source-repo>/apps/backend/src/videomaker/services/project_renderer.py
 ```
 
 Искать: как собирается ffmpeg subprocess, где progress-parsing (регекс по `out_time_ms=`), есть ли fallback на `-filter_complex_script` file при filter >100KB.
@@ -382,8 +382,8 @@ git push origin feat/glm-provider
 - [ ] **Step 3: Build gates (frontend)**
 
 ```
-cd /Users/malovnik/Documents/Dev/videomaker && npx -p typescript tsc --noEmit -p apps/frontend/tsconfig.json
-cd /Users/malovnik/Documents/Dev/videomaker && pnpm -C apps/frontend build
+cd <source-repo> && npx -p typescript tsc --noEmit -p apps/frontend/tsconfig.json
+cd <source-repo> && pnpm -C apps/frontend build
 ```
 Expected: tsc silent exit, pnpm `✓ Compiled successfully` + static pages generation complete.
 
@@ -416,8 +416,8 @@ git push origin feat/glm-provider
 - [ ] **Step 1: Grep всех callers**
 
 ```
-grep -rn "apply_split_screen" /Users/malovnik/Documents/Dev/videomaker/apps/backend --include="*.py"
-grep -rn "build_filter_complex" /Users/malovnik/Documents/Dev/videomaker/apps/backend --include="*.py"
+grep -rn "apply_split_screen" <source-repo>/apps/backend --include="*.py"
+grep -rn "build_filter_complex" <source-repo>/apps/backend --include="*.py"
 ```
 
 Ожидание после Task 3:
@@ -514,7 +514,7 @@ git push origin feat/glm-provider
 
 ---
 
-**Plan complete and saved to `/Users/malovnik/Documents/Dev/videomaker/docs/plans/2026-04-22-split-screen-single-pass.md`.**
+**Plan complete and saved to `<source-repo>/docs/plans/2026-04-22-split-screen-single-pass.md`.**
 
 Two execution options:
 

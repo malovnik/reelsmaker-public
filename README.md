@@ -4,7 +4,7 @@
 multi-pass LLM-анализ транскрипта. Идея — собирать рилсы из разных частей
 исходника (виртуальный монтаж), а не резать подряд.
 
-План реализации: `/Users/malovnik/.claude/plans/optimized-crunching-pond.md`.
+План реализации: `~/.claude`.
 
 > **Полная справка:** [`docs/guide.md`](docs/guide.md) — детальное описание 8 страниц настроек, API, Vision Layer, Dramaturgy framework, scheduler, troubleshooting.
 

@@ -128,7 +128,7 @@ brew reinstall ffmpeg
 ### 2.3 Первый запуск
 
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker
+cd <source-repo>
 ./run.sh
 ```
 
@@ -2208,7 +2208,7 @@ pnpm install
 6. trap cleanup — по Ctrl+C останавливает оба процесса
 
 ```bash
-cd /Users/malovnik/Documents/Dev/videomaker
+cd <source-repo>
 ./run.sh
 # Ctrl+C → остановка
 ```

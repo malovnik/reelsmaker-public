@@ -91,7 +91,7 @@
 ## Первая итерация
 
 План с микрозадачами запиши через Superpowers brainstorming в:
-/Users/malovnik/Documents/Dev/videomaker/docs/vision-profiles-redesign-plan.md
+<source-repo>/docs/vision-profiles-redesign-plan.md
 
 Читай план первым делом каждый цикл. Обновляй Status после каждой микрозадачи.
 

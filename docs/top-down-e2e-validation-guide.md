@@ -44,7 +44,7 @@ curl -X PUT http://localhost:8000/api/v1/settings/performance \
 
 Использовать test видео из предыдущих сессий:
 ```
-/Users/malovnik/Downloads/4K Video Downloader+/Сделай ЭТО для своей женщины прямо сейчас!...mp4
+~/Downloads/4K Video Downloader+/Сделай ЭТО для своей женщины прямо сейчас!...mp4
 ```
 
 Upload через UI → выбрать profile (talking_head) → target_reel_count (можно оставить default 15) → Run.

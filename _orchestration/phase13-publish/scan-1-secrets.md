@@ -1,6 +1,6 @@
 # Scan 1 — Secret Leak Audit (private → public)
 
-**Repo:** `/Users/malovnik/Documents/Dev/reelsmaker-public`
+**Repo:** `.`
 **Date:** 2026-05-27
 **Scope:** 676 tracked files, 23 commits, working tree clean.
 **Auditor role:** Secret Leak Auditor (паранойя к утечкам, исчерпывающность).

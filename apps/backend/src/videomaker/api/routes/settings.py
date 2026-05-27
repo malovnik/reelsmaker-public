@@ -20,6 +20,7 @@ from videomaker.models.vision_settings import (
 )
 from videomaker.services import profile_masks as profile_masks_svc
 from videomaker.services import settings_service, subtitle_store
+from videomaker.services.api_keys_store import api_keys_status, set_api_keys
 from videomaker.services.font_scanner import (
     FontScannerError,
     load_cache,
@@ -82,6 +83,42 @@ async def update_performance_settings(
     """Bulk upsert всех runtime-полей. Cache инвалидируется автоматически."""
 
     return await set_performance_settings(payload)
+
+
+class ApiKeysStatus(BaseModel):
+    """Маскированный статус ключей — задан/не задан, без самих значений."""
+
+    gemini_api_key: bool
+    deepgram_api_key: bool
+    publer_api_key: bool
+    publer_workspace_id: bool
+
+
+class ApiKeysUpdate(BaseModel):
+    """PATCH-обновление ключей. Передавайте только изменяемые поля.
+
+    Значение "" очищает ключ (возврат к значению из .env, если оно есть).
+    """
+
+    gemini_api_key: str | None = None
+    deepgram_api_key: str | None = None
+    publer_api_key: str | None = None
+    publer_workspace_id: str | None = None
+
+
+@router.get("/api-keys", response_model=ApiKeysStatus)
+async def get_api_keys() -> ApiKeysStatus:
+    """Какие ключи заданы (runtime или .env). Значения наружу не отдаются."""
+
+    return ApiKeysStatus(**await api_keys_status())
+
+
+@router.put("/api-keys", response_model=ApiKeysStatus)
+async def update_api_keys(payload: ApiKeysUpdate) -> ApiKeysStatus:
+    """Сохраняет ключи в runtime-настройки и применяет без рестарта."""
+
+    await set_api_keys(payload.model_dump(exclude_unset=True))
+    return ApiKeysStatus(**await api_keys_status())
 
 
 class VisionSettingsResponse(BaseModel):

@@ -37,16 +37,15 @@ class Settings(BaseSettings):
     # tier (cost control); Pro/Flash — осознанный opt-in через UI-тоггл
     # (PerformanceSettings.llm_tier_profile). Cold-cache всегда Flash-Lite.
     gemini_default_model: str = "gemini-2.5-flash-lite"
-    # Реальные модели для tier pro / flash. Flash-Lite берётся из
-    # llm_lite_variant (2.5-flash-lite | 3.1-flash-lite-preview).
+    # Реальные модели для tier pro / flash. Flash-Lite = gemini-2.5-flash-lite
+    # (3.1-flash-lite-preview снята Google, отдаёт 404).
     gemini_pro_model: str = "gemini-2.5-pro"
     gemini_flash_model: str = "gemini-2.5-flash"
     gemini_rate_limit_rpm: int = Field(default=60, ge=1, le=10000)
     # Gemini модели, которые можно выбрать в UploadWizard / Settings.
-    # Только Lite-варианты: более дорогие модели запрещены по user constraint.
+    # Только живые Lite-варианты: более дорогие модели запрещены по user constraint.
     gemini_available_models: tuple[str, ...] = (
-        "gemini-3.1-flash-lite-preview",  # $0.25/$1.50 — cheapest, preview
-        "gemini-2.5-flash-lite",           # stable Lite поколения 2.5 — надёжный JSON schema
+        "gemini-2.5-flash-lite",  # stable Lite 2.5 — надёжный JSON schema
     )
 
     anthropic_api_key: str | None = None

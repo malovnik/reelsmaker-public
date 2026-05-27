@@ -83,6 +83,7 @@ export default function HomePage() {
         defaultUseSourceForRender={
           data.performance?.default_use_source_for_render ?? false
         }
+        defaultProxyEnabled={data.performance?.proxy_enabled ?? true}
       />
     </main>
   );

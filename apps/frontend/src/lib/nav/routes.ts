@@ -69,6 +69,7 @@ export const NAV_ZONES: NavZone[] = [
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   { code: "PRF", label: "Профили нарезки", href: "/settings/profiles" },
   { code: "MDL", label: "Модели", href: "/settings/models" },
+  { code: "KEY", label: "Ключи API", href: "/settings/api-keys" },
   { code: "PFM", label: "Производительность", href: "/settings/performance" },
   { code: "CAP", label: "Субтитры", href: "/settings/subtitles" },
   { code: "POP", label: "Пост-продакшн", href: "/settings/post-production" },

@@ -113,11 +113,13 @@ export function SplitScreenSection({
           <div className="rounded-none border border-[color:var(--warning)]/40 bg-[color:var(--accent-primary-subtle)] p-3 text-sm text-[color:var(--warning)]">
             <div className="mb-1 font-medium">Split-режим активен</div>
             <div className="leading-relaxed">
-              Основные настройки <span className="font-mono">fit / fill</span>{" "}
-              из глобальных не применяются к split-рилсам — кропом управляют{" "}
+              В этом режиме кадром управляют{" "}
               <span className="font-mono">Main Panel Transform</span> и{" "}
-              <span className="font-mono">Companion Panel Transform</span>{" "}
-              ниже. Превью в этом разделе 1:1 соответствует финальному рендеру.
+              <span className="font-mono">Companion Panel Transform</span> ниже,
+              поэтому следующие настройки <b>не применяются</b> к split-рилсам:{" "}
+              <span className="font-mono">fit / fill</span>, авто-зум (Ken Burns),
+              punch-in и трекинг лица / авто-кроп по лицу. Превью в этом разделе
+              1:1 соответствует финальному рендеру.
             </div>
           </div>
           <Field label="Как кадрировать основу (main)">

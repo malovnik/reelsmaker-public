@@ -10,6 +10,22 @@ export interface ModelsInfo {
   available_llm_models: Record<string, string[]>;
 }
 
+/** Маскированный статус ключей — задан/не задан, без самих значений. */
+export interface ApiKeysStatus {
+  gemini_api_key: boolean;
+  deepgram_api_key: boolean;
+  publer_api_key: boolean;
+  publer_workspace_id: boolean;
+}
+
+/** PATCH-обновление ключей. Только переданные поля; "" очищает. */
+export interface ApiKeysUpdate {
+  gemini_api_key?: string;
+  deepgram_api_key?: string;
+  publer_api_key?: string;
+  publer_workspace_id?: string;
+}
+
 export interface PromptPayload {
   key: string;
   content: string;
@@ -226,6 +242,14 @@ export const settingsApi = {
     request<PerformanceSettings>("/api/v1/settings/performance"),
   updatePerformanceSettings: (payload: PerformanceSettings) =>
     request<PerformanceSettings>("/api/v1/settings/performance", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  // API-ключи (Gemini / Deepgram / Publer) — задаются из UI, не из .env.
+  getApiKeys: () => request<ApiKeysStatus>("/api/v1/settings/api-keys"),
+  updateApiKeys: (payload: ApiKeysUpdate) =>
+    request<ApiKeysStatus>("/api/v1/settings/api-keys", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

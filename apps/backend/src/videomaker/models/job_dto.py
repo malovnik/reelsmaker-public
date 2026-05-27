@@ -37,7 +37,7 @@ class JobCreate(BaseModel):
     # macOS → stable_ts_mlx (локальный), Win/Linux → deepgram (cloud).
     transcriber: str = Field(default=DEFAULT_TRANSCRIBER)
     llm_provider: str = Field(default="gemini")
-    llm_model: str = Field(default="gemini-3.1-flash-lite-preview")
+    llm_model: str = Field(default="gemini-2.5-flash-lite")
     target_aspect: str = Field(default="9:16")
     fit_mode: str = Field(default="fill")
     source_language: str = Field(default="auto")

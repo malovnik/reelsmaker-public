@@ -66,14 +66,14 @@ class PerformanceSettings(BaseModel):
     # LLM tier profile — глобальный переключатель модели.
     # Применяется в build_llm_for_tier() без рестарта (см. _tier_profiles).
     # Только Lite-варианты: более дорогие модели запрещены по user constraint.
-    #   - fast: всё на выбранном Lite-варианте (см. llm_lite_variant)
-    #   - legacy: всё на 3.1-flash-lite-preview (историческая совместимость)
+    #   - fast: Pro/Flash на тяжёлых стадиях + Flash-Lite на лёгких
+    #   - legacy: всё на Flash-Lite (одна-модель-везде)
     llm_tier_profile: LLMTierProfile = "fast"
 
-    # Какую Lite-модель использовать в профиле ``fast``:
-    # - "2_5": gemini-2.5-flash-lite (стабильная structured output, default)
-    # - "3_1": gemini-3.1-flash-lite-preview (дешевле, preview-статус)
-    # Legacy всегда использует 3.1 независимо от этого поля.
+    # Историческое поле: выбор Lite-варианта. 3.1-flash-lite-preview снята
+    # Google (404), поэтому единственная живая Lite — gemini-2.5-flash-lite,
+    # и оба значения резолвятся в неё (см. tier_resolver). Поле сохранено для
+    # совместимости со старыми записями БД; UI предлагает только "2_5".
     llm_lite_variant: LLMLiteVariant = "2_5"
 
     # Hard switch LLM provider для Kartoziya pipeline.

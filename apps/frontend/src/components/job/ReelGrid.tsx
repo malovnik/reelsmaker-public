@@ -242,9 +242,9 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
           В этой категории — никого. Открой «Все», там вся подборка.
         </div>
       ) : (
-        // VD-02: рилсы 9:16 узкие — раскрываем галерею до 6 колонок на широких
-        // экранах (1400px+). Плавная прогрессия 2→3→4→5→6.
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5 2xl:grid-cols-6">
+        // Сетка рилсов: максимум 4 в ряд. Больше колонок делают карточку
+        // слишком узкой — текст/счёт не помещаются. Прогрессия 2→3→4.
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
           {filteredReels.map((artifact) => (
             <ReelCard
               key={artifact.id}

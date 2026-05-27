@@ -219,10 +219,21 @@ export function SubtitlePreview({
     [preset.width, preset.height, fitMode, src],
   );
 
-  const margin = useMemo(
-    () => computeMargin(config, preset.height, fitMode, letterbox),
-    [config, preset.height, fitMode, letterbox],
-  );
+  const margin = useMemo(() => {
+    const m = computeMargin(config, preset.height, fitMode, letterbox);
+    // Safe-zone в anchor-режиме: поднимаем нижний/верхний отступ минимум до
+    // safe-zone — синхронно с бэком (subtitle_styles.resolve_style), чтобы
+    // превью совпадало с реальным рилсом и текст не лез в небезопасную зону.
+    if (
+      config.clamp_to_safe_zone &&
+      (config.anchor === "bottom" || config.anchor === "top")
+    ) {
+      const safe = scaleSafeZones(preset.width, preset.height);
+      const floor = config.anchor === "bottom" ? safe.bottom : safe.top;
+      return { ...m, marginPx: Math.max(m.marginPx, floor) };
+    }
+    return m;
+  }, [config, preset.width, preset.height, fitMode, letterbox]);
 
   const scale = previewHeight / preset.height;
   const previewWidth = Math.round(preset.width * scale);

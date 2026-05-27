@@ -107,8 +107,8 @@ function ReelCardImpl({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <div className="flex items-center justify-between text-xs">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 p-3">
+        <div className="flex min-w-0 items-center justify-between gap-2 text-xs">
           <span className="font-mono text-[color:var(--text-secondary)]">
             {reelId}
           </span>
@@ -119,7 +119,7 @@ function ReelCardImpl({
           )}
         </div>
 
-        <p className="text-[11px] leading-snug text-[color:var(--text-muted)]">
+        <p className="line-clamp-3 break-words text-[11px] leading-snug text-[color:var(--text-muted)]">
           {breakdown.comment}
         </p>
 

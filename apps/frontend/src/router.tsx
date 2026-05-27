@@ -231,6 +231,14 @@ export const router = createBrowserRouter([
               })),
           },
           {
+            path: "api-keys",
+            ...routeError,
+            lazy: () =>
+              import("@/pages/ApiKeysPage").then((m) => ({
+                Component: m.default,
+              })),
+          },
+          {
             path: "performance",
             ...routeError,
             lazy: () =>

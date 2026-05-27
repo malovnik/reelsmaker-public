@@ -26,45 +26,39 @@ LLMTier = Literal["pro", "flash", "flash_lite"]
 log = get_logger(__name__)
 
 
-_LITE_3_1 = "gemini-3.1-flash-lite-preview"
+# gemini-3.1-flash-lite-preview снята Google (отдаёт 404). Единственная
+# живая Flash-Lite модель — 2.5; на неё мапятся ВСЕ Lite-резолюции, чтобы
+# пайплайн не упирался в мёртвый endpoint (иначе 0 evidence → 0 рилсов).
 _LITE_2_5 = "gemini-2.5-flash-lite"
 
 
-def _tier_profiles(
-    cfg: Settings, lite_variant: str
-) -> dict[str, dict[LLMTier, str]]:
+def _tier_profiles(cfg: Settings) -> dict[str, dict[LLMTier, str]]:
     """Формирует tier-матрицу.
 
-    ``lite_variant`` — "2_5" или "3_1": какую Flash-Lite модель использовать
-    для tier ``flash_lite`` (и для всех tier в ``legacy``).
-    Pro/Flash ID берутся из конфигурации (``GEMINI_PRO_MODEL`` /
-    ``GEMINI_FLASH_MODEL``).
+    Flash-Lite всегда = живая 2.5-flash-lite. Pro/Flash ID берутся из
+    конфигурации (``GEMINI_PRO_MODEL`` / ``GEMINI_FLASH_MODEL``).
     """
 
-    lite = _LITE_2_5 if lite_variant == "2_5" else _LITE_3_1
     return {
         "fast": {
             # Реальные модели по уровню tier: Pro — осознанный opt-in.
             "pro": cfg.gemini_pro_model,
             "flash": cfg.gemini_flash_model,
-            "flash_lite": lite,
+            "flash_lite": _LITE_2_5,
         },
         "legacy": {
-            # Классическая одна-модель-везде: фиксированно
-            # 3.1-flash-lite-preview вне зависимости от lite_variant
-            # (историческая совместимость).
-            "pro": _LITE_3_1,
-            "flash": _LITE_3_1,
-            "flash_lite": _LITE_3_1,
+            # Классическая одна-модель-везде на живой Flash-Lite.
+            "pro": _LITE_2_5,
+            "flash": _LITE_2_5,
+            "flash_lite": _LITE_2_5,
         },
     }
 
 
-def _cold_cache_fallback(lite_variant: str) -> dict[LLMTier, str]:
-    """All-Lite fallback при холодном кэше: каждый tier на Flash-Lite."""
+def _cold_cache_fallback() -> dict[LLMTier, str]:
+    """All-Lite fallback при холодном кэше: каждый tier на живой Flash-Lite."""
 
-    lite = _LITE_2_5 if lite_variant == "2_5" else _LITE_3_1
-    return {"pro": lite, "flash": lite, "flash_lite": lite}
+    return {"pro": _LITE_2_5, "flash": _LITE_2_5, "flash_lite": _LITE_2_5}
 
 
 def _resolve_tier_models(cfg: Settings) -> dict[LLMTier, str]:
@@ -78,11 +72,11 @@ def _resolve_tier_models(cfg: Settings) -> dict[LLMTier, str]:
     profile, lite_variant = _try_read_tier_profile()
     if profile is None:
         # Cold cache: безопасный all-Lite fallback.
-        mapping = _cold_cache_fallback(lite_variant)
+        mapping = _cold_cache_fallback()
         _log_tier_mapping(mapping, profile="cold_cache", lite_variant=lite_variant)
         return mapping
 
-    profiles = _tier_profiles(cfg, lite_variant)
+    profiles = _tier_profiles(cfg)
     if profile in profiles:
         mapping = profiles[profile]
         _log_tier_mapping(mapping, profile=profile, lite_variant=lite_variant)
@@ -90,7 +84,7 @@ def _resolve_tier_models(cfg: Settings) -> dict[LLMTier, str]:
 
     # Нераспознанный профиль (например legacy "balanced"/"quality" из БД) —
     # безопасный all-Lite fallback.
-    mapping = _cold_cache_fallback(lite_variant)
+    mapping = _cold_cache_fallback()
     _log_tier_mapping(mapping, profile=f"unknown:{profile}", lite_variant=lite_variant)
     return mapping
 
@@ -114,7 +108,8 @@ def _try_read_tier_profile() -> tuple[str | None, str]:
     """Возвращает (profile, lite_variant).
 
     profile — строка или None (при холодном кэше).
-    lite_variant — "2_5" или "3_1" (default "3_1" если не задан).
+    lite_variant — "2_5" (default; "3_1" может прийти из старой БД, но
+    резолвится в живую 2.5-flash-lite, см. _tier_profiles).
     """
 
     try:
@@ -124,8 +119,8 @@ def _try_read_tier_profile() -> tuple[str | None, str]:
 
         snapshot = get_cached_performance_settings()
         if snapshot is None:
-            return None, "3_1"
-        variant = getattr(snapshot, "llm_lite_variant", "3_1")
+            return None, "2_5"
+        variant = getattr(snapshot, "llm_lite_variant", "2_5")
         return snapshot.llm_tier_profile, variant
     except Exception:
-        return None, "3_1"
+        return None, "2_5"

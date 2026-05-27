@@ -48,21 +48,33 @@ export function PresetListColumn({
               <span
                 className={`text-xs font-medium ${
                   active
-                    ? "text-[color:var(--gold-dim)]"
+                    ? "text-[color:var(--ink)]"
                     : "text-[color:var(--paper)]"
                 }`}
               >
                 {p.is_default ? "★ " : ""}
                 {p.name}
               </span>
-              <span className="font-mono text-[10px] text-[color:var(--mute)]">
+              <span
+                className={`font-mono text-[10px] ${
+                  active
+                    ? "text-[color:var(--ink)]/80"
+                    : "text-[color:var(--mute)]"
+                }`}
+              >
                 {p.config.zoom_enabled ? "зум" : "без зума"} ·{" "}
                 {p.config.audio_normalize_enabled
                   ? `${p.config.audio_target_lufs} LUFS`
                   : "звук не нормализуется"}
               </span>
               {(p.intro_asset || p.outro_asset) && (
-                <span className="font-mono text-[10px] text-[color:var(--mute-2)]">
+                <span
+                  className={`font-mono text-[10px] ${
+                    active
+                      ? "text-[color:var(--ink)]/70"
+                      : "text-[color:var(--mute-2)]"
+                  }`}
+                >
                   {p.intro_asset ? "интро" : ""}
                   {p.intro_asset && p.outro_asset ? " + " : ""}
                   {p.outro_asset ? "аутро" : ""}

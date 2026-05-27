@@ -42,7 +42,6 @@ export function LLMGroup({ values, update }: GroupProps) {
             hintKey="llm_lite_variant"
             value={values.llm_lite_variant}
             options={[
-              { value: "3_1", label: "Gemini 3.1 Flash Lite Preview" },
               { value: "2_5", label: "Gemini 2.5 Flash Lite (стабильная)" },
             ]}
             onChange={(v) => update("llm_lite_variant", v as "2_5" | "3_1")}

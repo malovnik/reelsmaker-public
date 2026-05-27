@@ -37,6 +37,7 @@ export interface UseWizardStateOptions {
   subtitlePresets: SubtitleStylePreset[];
   postProductionPresets: PostProductionPreset[];
   defaultUseSourceForRender: boolean;
+  defaultProxyEnabled: boolean;
   onJobCreated?: (jobId: string) => void;
 }
 
@@ -126,6 +127,7 @@ export function useWizardState(
     subtitlePresets,
     postProductionPresets,
     defaultUseSourceForRender,
+    defaultProxyEnabled,
     onJobCreated,
   } = options;
 
@@ -189,7 +191,7 @@ export function useWizardState(
   const defaultModel =
     models.defaults[defaultProvider] ??
     models.defaults["gemini"] ??
-    "gemini-3.1-flash-lite-preview";
+    "gemini-2.5-flash-lite";
   // STT платформо-зависим: список приходит с бэкенда (= /health.transcribers).
   // Пусто на Win/Linux без ключа Deepgram. Дефолт — первый доступный движок.
   const defaultTranscriber = models.available_transcribers[0] ?? "";
@@ -227,7 +229,7 @@ export function useWizardState(
     number | null
   >(defaultPostProductionPresetId);
 
-  const [useProxy, setUseProxy] = useState<boolean>(true);
+  const [useProxy, setUseProxy] = useState<boolean>(defaultProxyEnabled);
   const [useSourceForRender, setUseSourceForRender] = useState<boolean>(
     defaultUseSourceForRender,
   );

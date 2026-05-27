@@ -199,6 +199,24 @@ async def run_render_stage(ctx: PipelineContext) -> PipelineContext:
         },
     )
 
+    # 0 рилсов — это не «успех с пустым результатом», а провал: анализ не дал
+    # ни одного кандидата (частая причина — недоступная LLM-модель/нет ключа,
+    # либо видео без речи/слишком короткое). Помечаем job как error с внятным
+    # сообщением, иначе пользователь видит «готово», но без рилсов.
+    if not rendered:
+        log.warning("pipeline_zero_reels", job_id=job_id)
+        await service.mark_error(
+            job_id,
+            error=(
+                "Не удалось собрать ни одного рилса: анализ не дал кандидатов. "
+                "Проверьте, что задан рабочий ключ Gemini и выбранная модель "
+                "доступна, а исходное видео содержит речь и достаточно длинное. "
+                "Подробности — в логах backend."
+            ),
+        )
+        ctx.rendered = []
+        return ctx
+
     done_extra: dict[str, Any] = {
         "reel_count": len(rendered),
         "manifest": str(manifest_path.name),

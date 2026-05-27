@@ -99,7 +99,7 @@ async def create_job(
     file: UploadFile = File(..., description="Исходное видео"),
     transcriber: str = Form(default=DEFAULT_TRANSCRIBER),
     llm_provider: str = Form(default="gemini"),
-    llm_model: str = Form(default="gemini-3.1-flash-lite-preview"),
+    llm_model: str = Form(default="gemini-2.5-flash-lite"),
     target_aspect: str = Form(default="9:16"),
     fit_mode: str = Form(default="fill"),
     source_language: str = Form(default="auto"),
@@ -387,7 +387,14 @@ async def _resolve_post_production_config(
     """
 
     if preset_id is None:
-        return None
+        # Фоллбэк на is_default PP-пресет (симметрично субтитрам): без него
+        # пресет, помеченный «по умолчанию», не применялся бы к новым нарезкам —
+        # именно поэтому split/зум/аутро из дефолтного пресета «сами не
+        # включались». None остаётся только если дефолтного пресета вообще нет.
+        default_preset = await post_production_store.get_default_preset()
+        if default_preset is None:
+            return None
+        preset_id = int(default_preset.id)
     try:
         preset, intro, outro, companion = await post_production_store.get_preset_with_assets(preset_id)
     except PresetNotFoundError as exc:

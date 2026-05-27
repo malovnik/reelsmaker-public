@@ -149,27 +149,6 @@ export function TopBar({ onOpenNav }: Props) {
       </nav>
 
       <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
-        <div
-          className="mono hidden min-w-[280px] items-center gap-2.5 rounded-none border border-[color:var(--line-soft)] bg-[color:var(--ink-2)] px-3.5 py-2 text-[12px] text-[color:var(--mute-2)] xl:flex"
-          aria-label="Поиск по проектам"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.6}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <span className="flex-1 text-[12px]">Найти проект, клип, момент…</span>
-        </div>
-
         <ModeSwitch />
         <HealthIndicator />
       </div>

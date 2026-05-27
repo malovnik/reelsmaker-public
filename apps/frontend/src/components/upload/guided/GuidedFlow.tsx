@@ -574,6 +574,52 @@ export function GuidedFlow({
               </div>
             );
           })}
+          {(() => {
+            const splitSupported = !!preset?.companion_asset;
+            const splitChecked =
+              splitSupported &&
+              (state.splitScreenOverride ??
+                !!preset?.config.split_screen.enabled);
+            return (
+              <div className="flex items-start justify-between gap-4 p-4">
+                <div className="min-w-0">
+                  <span className="text-[0.9375rem] font-medium text-[var(--paper)]">
+                    Сплит-скрин
+                  </span>
+                  <p className="mt-0.5 text-[0.8125rem] leading-snug text-[var(--mute)]">
+                    {splitSupported
+                      ? "Наложить видео-компаньон из пресета (реакция / вторая камера)."
+                      : "Сначала добавьте видео-компаньон в пресете пост-продакшн (Эксперт → Пост-продакшн)."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={splitChecked}
+                  disabled={!splitSupported}
+                  onClick={() =>
+                    actions.setSplitScreenOverride(!splitChecked)
+                  }
+                  className={cn(
+                    "relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center border transition-colors disabled:opacity-40",
+                    splitChecked
+                      ? "border-[var(--gold)] bg-[var(--gold)]"
+                      : "border-[var(--line)] bg-[var(--ink-3)]",
+                  )}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "block size-4 transition-transform",
+                      splitChecked
+                        ? "translate-x-6 bg-[var(--ink)]"
+                        : "translate-x-1 bg-[var(--mute-2)]",
+                    )}
+                  />
+                </button>
+              </div>
+            );
+          })()}
           <div className="flex items-start justify-between gap-4 p-4">
             <div className="min-w-0">
               <span className="text-[0.9375rem] font-medium text-[var(--paper)]">

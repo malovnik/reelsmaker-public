@@ -283,6 +283,16 @@ def resolve_style(
         alignment, margin_v = compute_margin_v(
             config, preset_height, fit_mode, letterbox
         )
+        # Safe-zone в anchor-режиме: margin_v отсчитывается от нижнего/верхнего
+        # края кадра, поэтому при включённом clamp поднимаем его минимум до
+        # safe-zone — иначе текст заходит в небезопасную полосу (UI соцсети),
+        # которую превью рисует, но рендер раньше игнорировал.
+        if config.clamp_to_safe_zone:
+            safe = compute_safe_zones(preset_width, preset_height)
+            if config.anchor is SubtitleAnchor.bottom:
+                margin_v = max(margin_v, safe.bottom)
+            elif config.anchor is SubtitleAnchor.top:
+                margin_v = max(margin_v, safe.top)
 
     # Горизонтальные поля: safe-zone-aware, чтобы libass авто-перенос и
     # визуальный центр уважали IG UI (иконки справа, подпись снизу-слева).

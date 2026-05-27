@@ -719,8 +719,10 @@ export function UploadWizard({
                 if (!effectiveEnabled) return null;
                 return (
                   <p className="mt-1 text-[11px] leading-relaxed text-[color:var(--warning)]">
-                    В split-режиме это кадрирование не применяется. Настрой
-                    кроп через Split-Screen Preview в{" "}
+                    Split-режим включён в пресете — поэтому это кадрирование, а
+                    также авто-зум (Ken Burns), punch-in и трекинг лица / авто-кроп
+                    по лицу <b>не применяются</b>. Кадром управляют Main/Companion
+                    Transform в{" "}
                     <Link
                       to="/settings/post-production"
                       className="underline underline-offset-2 hover:text-[color:var(--warning)]"

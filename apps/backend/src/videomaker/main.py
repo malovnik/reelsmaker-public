@@ -63,6 +63,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if subtitles_seeded:
         log.info("default_subtitle_presets_ready", added=subtitles_seeded)
 
+    # Применяем сохранённые в UI API-ключи на singleton Settings, чтобы все
+    # читатели settings.<key> видели runtime-значение (а не только .env).
+    from videomaker.services.api_keys_store import apply_api_keys_to_settings
+
+    await apply_api_keys_to_settings(settings)
+
     # Прогрев кеша шрифтов — 6 секунд system_profiler в фоне, не
     # блокирует uvicorn startup. Пользователь получит полный список
     # при втором открытии страницы, первый запрос — fallback из SYSTEM_FONTS.

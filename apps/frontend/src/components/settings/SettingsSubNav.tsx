@@ -23,6 +23,12 @@ const ITEMS: Item[] = [
     hint: "LLM-провайдеры, распознавание речи, визуальный анализ",
   },
   {
+    href: "/settings/api-keys",
+    code: "KEY",
+    label: "Ключи API",
+    hint: "Gemini, Deepgram, Publer — ввод ключей без правки .env",
+  },
+  {
     href: "/settings/performance",
     code: "PRF",
     label: "Производительность",

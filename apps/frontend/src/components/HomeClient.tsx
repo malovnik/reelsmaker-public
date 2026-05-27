@@ -22,6 +22,7 @@ interface Props {
   postProductionPresets: PostProductionPreset[];
   profileMasks: ProfileMaskRead[];
   defaultUseSourceForRender: boolean;
+  defaultProxyEnabled: boolean;
 }
 
 export function HomeClient({
@@ -31,6 +32,7 @@ export function HomeClient({
   postProductionPresets,
   profileMasks,
   defaultUseSourceForRender,
+  defaultProxyEnabled,
 }: Props) {
   const [jobs, setJobs] = useState<JobRead[]>(initialJobs);
 
@@ -103,6 +105,7 @@ export function HomeClient({
           subtitlePresets={subtitlePresets}
           postProductionPresets={postProductionPresets}
           defaultUseSourceForRender={defaultUseSourceForRender}
+          defaultProxyEnabled={defaultProxyEnabled}
           onJobCreated={refreshJobs}
         >
           <StudioSwitch

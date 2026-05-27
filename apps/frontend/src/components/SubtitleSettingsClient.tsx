@@ -244,7 +244,7 @@ export function SubtitleSettingsClient({
   }, [showFlash, toast]);
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)_320px]">
       <aside className="flex flex-col gap-2">
         <button
           type="button"
@@ -296,7 +296,7 @@ export function SubtitleSettingsClient({
         </div>
       </aside>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"

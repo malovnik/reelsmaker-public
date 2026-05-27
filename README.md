@@ -42,7 +42,7 @@ Reelibra берёт длинное видео (интервью, подкаст,
    - **Windows:** двойной клик по **`reelibraWIN.cmd`**
    - **macOS:** двойной клик по **`reelibraMAC.command`** (первый раз: правый клик → «Открыть», т.к. приложение не подписано)
    - **Linux:** запустите `./reelibraLINUX.sh` в терминале, либо один раз `bash launchers/linux/install.sh` — появится ярлык в меню приложений.
-3. **Больше ничего ставить не нужно.** При первом запуске Reelibra сам скачает и настроит всё необходимое (Python, Node.js, ffmpeg) в свою локальную папку — с показом прогресса. Ничего в систему не устанавливается, прав администратора не требуется.
+3. **Больше ничего ставить не нужно.** При первом запуске Reelibra сам скачает и настроит всё необходимое (Python, Node.js, ffmpeg) в свою локальную папку — с показом прогресса. Ничего в систему не устанавливается, прав администратора, как правило, не требуется. *(Исключение: на Windows возможен разовый запрос UAC, если в системе отсутствует Visual C++ Runtime — Reelibra предложит его доустановить.)*
 4. Когда всё готово — откроется браузер на `http://localhost:3000`.
 
 > Первый запуск дольше: идёт загрузка компонентов (нужен интернет, несколько минут в зависимости от скорости сети). Последующие запуски — быстрые. Каждый запуск Reelibra проверяет окружение и подчищает зависшие процессы от прошлого раза.
@@ -74,7 +74,7 @@ Reelibra берёт длинное видео (интервью, подкаст,
 
 ### Что под капотом (тех. часть)
 - **Монорепо:** backend на Python (FastAPI, порт 8000) + frontend на React 19 + Vite (порт 3000). Данные — SQLite.
-- **Запуск вручную (для разработки):** `./run.sh` (нужны установленные `uv`, `node`, `ffmpeg`).
+- **Запуск вручную (для разработки):** `./run.sh` (нужны установленные `uv`, `node` + `pnpm`, `ffmpeg`).
 - **LLM-стек:** Google Gemini (по умолчанию), опционально Zhipu GLM.
 - **Распознавание речи:** на Apple Silicon — локальный MLX (`stable_ts_mlx`); на Windows/Linux/Intel — Deepgram (облако).
 - **Видео:** ffmpeg, кодирование HEVC/H.264 (на Mac — VideoToolbox, иначе libx264/libx265 — на CPU).
@@ -118,7 +118,7 @@ It runs **locally on your machine**. The cloud is used only for LLM analysis (Go
    - **Windows:** double-click **`reelibraWIN.cmd`**
    - **macOS:** double-click **`reelibraMAC.command`** (first time: right-click → "Open", since the app is unsigned)
    - **Linux:** run `./reelibraLINUX.sh` in a terminal, or once `bash launchers/linux/install.sh` to get an app-menu shortcut.
-3. **Nothing else to install.** On first run Reelibra downloads and sets up everything it needs (Python, Node.js, ffmpeg) into its own local folder — with a progress display. Nothing is installed system-wide, no admin rights required.
+3. **Nothing else to install.** On first run Reelibra downloads and sets up everything it needs (Python, Node.js, ffmpeg) into its own local folder — with a progress display. Nothing is installed system-wide, and admin rights are usually not required. *(Exception: on Windows a one-time UAC prompt may appear if Visual C++ Runtime is missing — Reelibra offers to install it.)*
 4. When ready, your browser opens at `http://localhost:3000`.
 
 > The first run takes longer: it downloads components (internet required, a few minutes depending on your connection). Later runs are fast. Every launch Reelibra checks the environment and cleans up stale processes from last time.
@@ -150,7 +150,7 @@ But **the program is resource-intensive, and its speed depends directly on your 
 
 ### Under the hood (technical)
 - **Monorepo:** Python backend (FastAPI, port 8000) + React 19 + Vite frontend (port 3000). Data in SQLite.
-- **Manual run (for development):** `./run.sh` (requires `uv`, `node`, `ffmpeg` installed).
+- **Manual run (for development):** `./run.sh` (requires `uv`, `node` + `pnpm`, `ffmpeg` installed).
 - **LLM stack:** Google Gemini (default), optionally Zhipu GLM.
 - **Speech recognition:** Apple Silicon — local MLX (`stable_ts_mlx`); Windows/Linux/Intel — Deepgram (cloud).
 - **Video:** ffmpeg, HEVC/H.264 encoding (VideoToolbox on Mac, otherwise libx264/libx265 — on CPU).

@@ -1,245 +1,168 @@
-# videomaker
+<div align="center">
+  <img src="assets/reelibra.svg" width="120" alt="Reelibra"/>
 
-Локальный нарезчик длинных видео на короткие вертикальные рилсы (9:16) через
-multi-pass LLM-анализ транскрипта. Идея — собирать рилсы из разных частей
-исходника (виртуальный монтаж), а не резать подряд.
+  # Reelibra
 
-План реализации: `~/.claude`.
+  **Локальная нарезка длинных видео на вертикальные рилсы (9:16) через ИИ.**
+  **Local AI editor that turns long videos into vertical reels (9:16).**
 
-> **Полная справка:** [`docs/guide.md`](docs/guide.md) — детальное описание 8 страниц настроек, API, Vision Layer, Dramaturgy framework, scheduler, troubleshooting.
+  [Русский](#-русский) · [English](#-english)
+</div>
 
-## Требования
+---
 
-- macOS на Apple Silicon (оптимизировано под M5, 24 GB RAM)
-- Python 3.12 (ставится через `uv`)
-- Node.js ≥ 20 и pnpm
-- ffmpeg ≥ 7 c `hevc_videotoolbox` (`brew install ffmpeg`)
+## 🇷🇺 Русский
 
-Если чего-то не хватает:
+Reelibra берёт длинное видео (интервью, подкаст, выступление, скринкаст) и собирает из него короткие вертикальные рилсы. Не режет подряд, а **виртуально монтирует** — LLM анализирует транскрипт по драматургии и собирает рилсы из разных частей исходника.
 
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-brew install node pnpm ffmpeg
-```
+Работает **локально на вашем компьютере**. Облако используется только для LLM-анализа (Google Gemini) и, на Windows/Linux, для распознавания речи (Deepgram).
 
-## Первый запуск
+### Что умеет
+- Загрузка длинного видео → автоматическая нарезка на набор рилсов.
+- **Два режима интерфейса:**
+  - **Пошаговый** — мастер от «Создай проект» до готовых рилсов: ведёт за руку, разумные настройки по умолчанию. Для новичков.
+  - **Эксперт-студия** — все настройки сразу + подсказка напротив каждого контрола. Для тех, кто хочет контроль.
+- Транскрипция речи (локально на Mac / через Deepgram на Windows/Linux), субтитры с настраиваемым стилем, выравнивание громкости.
+- Просмотр и отбор рилсов (в т.ч. свайп-режим), правка субтитров, экспорт под платформы.
+- Опционально: публикация в Instagram Reels / YouTube Shorts через Publer; проекты-папки; локальный анализ кадра (Vision, по умолчанию выключен).
 
-```bash
-./run.sh
-```
+### Поддерживаемые системы
+| Система | Поддержка | Распознавание речи |
+|---------|-----------|--------------------|
+| **macOS (Apple Silicon, M1+)** | ✅ Полная | Локально (без облака и без ключа) |
+| **macOS (Intel)** | ⚠️ Частично | Только Deepgram (облако, нужен ключ) |
+| **Windows 10/11 (64-бит)** | ✅ Да | Только Deepgram (облако, нужен ключ) |
+| **Linux (x86_64, glibc ≥ 2.35)** | ✅ Да | Только Deepgram (облако, нужен ключ) |
 
-Скрипт поднимет:
+**Windows 7 и 8 не поддерживаются** — современные компоненты (Python 3.12+, ML-библиотеки) на них физически не работают. Минимум — Windows 10 64-бит (сборка 1809+).
 
-- backend (FastAPI + SSE) на <http://127.0.0.1:8000>
-- frontend (Next.js 16 + React 19) на <http://localhost:3000>
+### Запуск в два клика
+1. Скачайте репозиторий (кнопка **Code → Download ZIP** на GitHub) и распакуйте. Или `git clone`.
+2. Запустите файл для вашей системы:
+   - **Windows:** двойной клик по **`reelibraWIN.cmd`**
+   - **macOS:** двойной клик по **`reelibraMAC.command`** (первый раз: правый клик → «Открыть», т.к. приложение не подписано)
+   - **Linux:** запустите `./reelibraLINUX.sh` в терминале, либо один раз `bash launchers/linux/install.sh` — появится ярлык в меню приложений.
+3. **Больше ничего ставить не нужно.** При первом запуске Reelibra сам скачает и настроит всё необходимое (Python, Node.js, ffmpeg) в свою локальную папку — с показом прогресса. Ничего в систему не устанавливается, прав администратора не требуется.
+4. Когда всё готово — откроется браузер на `http://localhost:3000`.
 
-Docs API: <http://127.0.0.1:8000/docs>. Health: <http://127.0.0.1:8000/api/v1/health>.
+> Первый запуск дольше: идёт загрузка компонентов (нужен интернет, несколько минут в зависимости от скорости сети). Последующие запуски — быстрые. Каждый запуск Reelibra проверяет окружение и подчищает зависшие процессы от прошлого раза.
 
-На первом запуске будет создана `.env` из `.env.example`. Добавь туда минимум
-`GEMINI_API_KEY` — это основной LLM по умолчанию. Остальные (Deepgram,
-Anthropic, OpenAI) опциональные и активируются автоматически, если ключи
-заданы.
+### Ключи API (что нужно положить в `.env`)
+При первом запуске создаётся файл `.env` из шаблона `.env.example`. Откройте его и впишите ключи:
 
-### Где брать API-ключи
+| Ключ | Обязателен | Зачем |
+|------|-----------|-------|
+| `GEMINI_API_KEY` | **Да, всегда** | LLM-анализ (ядро нарезки). Бесплатный ключ — [Google AI Studio](https://aistudio.google.com/apikey). |
+| `DEEPGRAM_API_KEY` | **Да на Windows/Linux** (и на Intel-Mac) | Распознавание речи в облаке. На Apple Silicon не нужен (работает локально). [deepgram.com](https://deepgram.com). |
+| `PUBLER_API_KEY` + `PUBLER_WORKSPACE_ID` | Нет (опционально) | Публикация рилсов в соцсети через Publer. |
+| `ZHIPU_API_KEY` | Нет (опционально) | Альтернативный LLM-провайдер (GLM). |
 
-- Gemini (по умолчанию): <https://aistudio.google.com/app/apikey>
-- Anthropic (Claude с prompt caching): <https://console.anthropic.com/settings/keys>
-- OpenAI (GPT-5): <https://platform.openai.com/api-keys>
-- Deepgram (альтернативный STT): <https://console.deepgram.com/signup>
+### Требования к железу (честно)
+**Дискретная видеокарта не обязательна.** LLM-анализ идёт в облаке, а кодирование видео — на процессоре (CPU).
 
-## Поток обработки
+Но **программа ресурсоёмкая, и скорость работы напрямую зависит от железа.** На слабом процессоре нарезка и кодирование будут сильно нагружать компьютер и идти медленно.
 
-Пайплайн обрабатывает каждое видео за 5 стадий:
+| | Минимум | Комфортно |
+|---|---------|-----------|
+| CPU | 4 ядра | 8+ ядер |
+| RAM | 8 ГБ | 16 ГБ |
+| Диск | ~10 ГБ под программу + до 30 ГБ под загружаемые видео | SSD |
+| Сеть | Обязательна (облачный LLM + первая загрузка) | |
+| macOS | Apple Silicon M1, 16 ГБ | M2/M3+, 24 ГБ |
 
-1. **ingest** — ffprobe читает metadata исходника.
-2. **transcribe** — mlx-whisper (локально на M5) или Deepgram nova-3 даёт
-   word-level timestamps.
-3. **silence_cut** — удаляются паузы ≥ 0.6 сек и филлеры (по regex-правилам
-   в `apps/backend/src/videomaker/config/fillers_ru.yaml`).
-4. **analyze** — 3-проходной LLM-анализ с RAG-chunking (см. план «Chunking
-   strategy»): Pass 1 ищет явные тезисы, Pass 2 — неявные углы, Pass 3
-   собирает рилсы из фрагментов разных мест.
-5. **render** — ffmpeg `filter_complex` нарезает и склеивает фрагменты,
-   VideoToolbox кодирует в HEVC (30fps, ≥15 Mbps, tag `hvc1`).
+**GPU (опционально):** нужна только если включить локальный слой анализа кадра (Vision, по умолчанию выключен). Тогда — Nvidia от RTX 3060 12 ГБ + ручная пересборка. Для базовой нарезки GPU не нужен.
 
-Прогресс транслируется через SSE на `/api/v1/jobs/{id}/stream` и live-
-отображается в UI.
+### Что под капотом (тех. часть)
+- **Монорепо:** backend на Python (FastAPI, порт 8000) + frontend на React 19 + Vite (порт 3000). Данные — SQLite.
+- **Запуск вручную (для разработки):** `./run.sh` (нужны установленные `uv`, `node`, `ffmpeg`).
+- **LLM-стек:** Google Gemini (по умолчанию), опционально Zhipu GLM.
+- **Распознавание речи:** на Apple Silicon — локальный MLX (`stable_ts_mlx`); на Windows/Linux/Intel — Deepgram (облако).
+- **Видео:** ffmpeg, кодирование HEVC/H.264 (на Mac — VideoToolbox, иначе libx264/libx265 — на CPU).
+- **Локальные данные** (`data/`, база, загруженные видео, готовые рилсы) хранятся только у вас и не покидают компьютер.
 
-## Структура
+### Честные ограничения
+- На Windows/Linux без ключа Deepgram распознавание речи работать не будет (на Apple Silicon — будет локально).
+- Кодирование на CPU: на слабых машинах медленно.
+- Слой анализа кадра (Vision) и трекинг лица по умолчанию выключены (экспериментальные, требуют ресурсов).
 
-```
-apps/
-├── backend/                      # Python 3.12, uv-managed
-│   ├── pyproject.toml
-│   ├── alembic/                  # миграции SQLite
-│   └── src/videomaker/
-│       ├── main.py
-│       ├── api/routes/           # health, jobs (SSE), settings, files
-│       ├── core/                 # config, db, logging, artifacts
-│       ├── models/               # SQLAlchemy + Pydantic DTO
-│       ├── services/
-│       │   ├── jobs.py           # throttled updates + in-memory JobEventBus
-│       │   ├── transcribers/     # mlx_whisper + deepgram factory
-│       │   ├── analyzers/        # multi-pass LLM orchestrator
-│       │   ├── chunker.py        # RAG-style sliding window по tiktoken
-│       │   ├── llm_client.py     # Gemini / Claude (cache) / OpenAI
-│       │   ├── prompts.py        # SYSTEM_PROMPT + stage prompts
-│       │   ├── prompt_store.py   # seed + load из БД
-│       │   ├── silence_cutter.py # RMS + regex filler detection
-│       │   ├── media.py          # ffmpeg wrappers (probe, extract, render)
-│       │   ├── subtitles.py      # ASS writer с local timeline
-│       │   ├── renderer.py       # HEVC presets + render_reel_plans
-│       │   └── pipeline.py       # 5-stage orchestrator
-│       └── config/               # YAML: fillers, export_presets
-└── frontend/                     # Next.js 16 + React 19 + Tailwind 4
-    └── src/
-        ├── app/
-        │   ├── page.tsx          # upload + список jobs
-        │   ├── jobs/[id]/        # детали job + video-плеер рилсов
-        │   └── settings/         # prompts + models
-        ├── components/           # client-компоненты
-        └── lib/
-            ├── api.ts            # typed fetch helpers + SSR URL resolver
-            └── sse.ts            # useJobSse hook
+---
 
-data/ (создаётся run.sh)
-├── videomaker.db                 # SQLite (jobs, artifacts, prompt_settings)
-├── uploads/<job_id>/             # загруженные исходники
-└── artifacts/<job_id>/
-    ├── audio/                    # извлечённая WAV 16 kHz mono
-    ├── text/                     # transcript.json, cleaned_transcript.json,
-    │                             # reel_plan.json, analysis_summary.json,
-    │                             # manifest.json
-    ├── reels/                    # финальные mp4 (H.265 HEVC)
-    └── subs/                     # ASS subtitles
-```
+## 🇬🇧 English
 
-## Dev-команды
+Reelibra takes a long video (interview, podcast, talk, screencast) and assembles short vertical reels from it. It doesn't cut sequentially — it **virtually edits**: an LLM analyzes the transcript by dramaturgy and assembles reels from different parts of the source.
 
-### Backend
+It runs **locally on your machine**. The cloud is used only for LLM analysis (Google Gemini) and, on Windows/Linux, for speech recognition (Deepgram).
 
-```bash
-cd apps/backend
-uv sync                               # установить deps
-uv run alembic upgrade head           # применить миграции
-uv run uvicorn videomaker.main:app --reload --reload-dir src
-uv run ruff check src/
-uv run pytest -q                      # 37 unit-тестов
-uv run pytest -m integration -q       # 5 integration-тестов с реальным ffmpeg
-```
+### Features
+- Upload a long video → automatic cut into a set of reels.
+- **Two interface modes:**
+  - **Step-by-step** — a wizard from "Create project" to finished reels: guides you, sensible defaults. For newcomers.
+  - **Expert studio** — all settings at once + a tooltip next to every control. For full control.
+- Speech transcription (locally on Mac / via Deepgram on Windows/Linux), styled subtitles, loudness normalization.
+- Review and pick reels (incl. swipe mode), edit subtitles, export per platform.
+- Optional: publish to Instagram Reels / YouTube Shorts via Publer; project folders; local frame analysis (Vision, off by default).
 
-### Frontend
+### Supported systems
+| System | Support | Speech recognition |
+|--------|---------|--------------------|
+| **macOS (Apple Silicon, M1+)** | ✅ Full | Local (no cloud, no key) |
+| **macOS (Intel)** | ⚠️ Partial | Deepgram only (cloud, key required) |
+| **Windows 10/11 (64-bit)** | ✅ Yes | Deepgram only (cloud, key required) |
+| **Linux (x86_64, glibc ≥ 2.35)** | ✅ Yes | Deepgram only (cloud, key required) |
 
-```bash
-cd apps/frontend
-pnpm install
-pnpm dev
-pnpm lint
-pnpm exec tsc --noEmit
-```
+**Windows 7 and 8 are not supported** — modern components (Python 3.12+, ML libraries) physically don't run on them. Minimum is Windows 10 64-bit (build 1809+).
 
-## Настройка субтитров
+### Two-click launch
+1. Download the repo (**Code → Download ZIP** on GitHub) and unzip. Or `git clone`.
+2. Run the file for your system:
+   - **Windows:** double-click **`reelibraWIN.cmd`**
+   - **macOS:** double-click **`reelibraMAC.command`** (first time: right-click → "Open", since the app is unsigned)
+   - **Linux:** run `./reelibraLINUX.sh` in a terminal, or once `bash launchers/linux/install.sh` to get an app-menu shortcut.
+3. **Nothing else to install.** On first run Reelibra downloads and sets up everything it needs (Python, Node.js, ffmpeg) into its own local folder — with a progress display. Nothing is installed system-wide, no admin rights required.
+4. When ready, your browser opens at `http://localhost:3000`.
 
-Страница **`/settings/subtitles`** — 3-колоночный редактор: слева список
-пресетов (4 built-in + пользовательские), центр — форма стиля (позиция,
-шрифт, цвет, обводка, тень, подложка), справа — live preview с
-pixel-accurate маппингом ASS-параметров (позиция, offset, letterbox для
-`fit`, подложка как `BorderStyle=3`). Live preview воспроизводит то, что
-libass нарисует в финальном рилсе.
+> The first run takes longer: it downloads components (internet required, a few minutes depending on your connection). Later runs are fast. Every launch Reelibra checks the environment and cleans up stale processes from last time.
 
-Позиционирование:
-- `fill` + `bottom/top` — offset 0-300 px от выбранного края кадра.
-- `fit` + `bottom/top` — offset 1-150 px внутрь letterbox от границы видео-зоны.
-- `center` + `fill` — offset 0-300 px сдвигает текст от центра кадра.
-- `center` + `fit` — offset игнорируется (текст всегда по центру).
+### API keys (put them in `.env`)
+On first run a `.env` file is created from `.env.example`. Open it and fill in the keys:
 
-При создании job на главной — select «Стиль субтитров» + мини-preview.
-Кнопка «редактировать» ведёт на `/settings/subtitles`. Избранные шрифты
-запоминаются в LocalStorage браузера.
+| Key | Required | Why |
+|-----|----------|-----|
+| `GEMINI_API_KEY` | **Yes, always** | LLM analysis (core of the editing). Free key — [Google AI Studio](https://aistudio.google.com/apikey). |
+| `DEEPGRAM_API_KEY` | **Yes on Windows/Linux** (and Intel Mac) | Cloud speech recognition. Not needed on Apple Silicon (works locally). [deepgram.com](https://deepgram.com). |
+| `PUBLER_API_KEY` + `PUBLER_WORKSPACE_ID` | No (optional) | Publishing reels to social media via Publer. |
+| `ZHIPU_API_KEY` | No (optional) | Alternative LLM provider (GLM). |
 
-API (если нужен прямой доступ):
+### Hardware requirements (honest)
+**A discrete GPU is not required.** LLM analysis runs in the cloud, and video encoding runs on the CPU.
 
-```bash
-# Список пресетов
-curl -s http://localhost:8000/api/v1/settings/subtitle_presets | jq
+But **the program is resource-intensive, and its speed depends directly on your hardware.** On a weak CPU, cutting and encoding will heavily load the machine and run slowly.
 
-# Создание кастомного пресета
-curl -X POST http://localhost:8000/api/v1/settings/subtitle_presets \
-  -H 'content-type: application/json' \
-  -d '{
-    "name": "Мой стиль",
-    "style": {
-      "anchor": "bottom", "offset_px": 160, "font": "Inter",
-      "size": 70, "weight": "bold", "primary_color": "#FFFFFF",
-      "outline_color": "#000000", "outline_width": 3.0,
-      "background": false
-    },
-    "is_default": false
-  }'
+| | Minimum | Comfortable |
+|---|---------|-------------|
+| CPU | 4 cores | 8+ cores |
+| RAM | 8 GB | 16 GB |
+| Disk | ~10 GB for the app + up to 30 GB for uploaded videos | SSD |
+| Network | Required (cloud LLM + first download) | |
+| macOS | Apple Silicon M1, 16 GB | M2/M3+, 24 GB |
 
-# Job с inline-стилем (минует таблицу пресетов)
-curl -F 'file=@video.mp4' \
-  -F 'subtitle_style_inline={"anchor":"top","offset_px":30,"font":"Arial","primary_color":"#FFFFFF"}' \
-  http://localhost:8000/api/v1/jobs
-```
+**GPU (optional):** only needed if you enable the local frame-analysis layer (Vision, off by default). Then — Nvidia from RTX 3060 12 GB + manual rebuild. For basic editing, no GPU is needed.
 
-## Обновление промптов
+### Under the hood (technical)
+- **Monorepo:** Python backend (FastAPI, port 8000) + React 19 + Vite frontend (port 3000). Data in SQLite.
+- **Manual run (for development):** `./run.sh` (requires `uv`, `node`, `ffmpeg` installed).
+- **LLM stack:** Google Gemini (default), optionally Zhipu GLM.
+- **Speech recognition:** Apple Silicon — local MLX (`stable_ts_mlx`); Windows/Linux/Intel — Deepgram (cloud).
+- **Video:** ffmpeg, HEVC/H.264 encoding (VideoToolbox on Mac, otherwise libx264/libx265 — on CPU).
+- **Local data** (`data/`, database, uploaded videos, finished reels) stays only on your machine and never leaves it.
 
-Промпты хранятся в SQLite-таблице `prompt_settings`. При старте сервер
-засидит дефолты из `services/prompts.py` только для отсутствующих ключей
-(идемпотентно). Чтобы откатить промпт к дефолту — удали строку из БД:
+### Honest limitations
+- On Windows/Linux without a Deepgram key, speech recognition won't work (on Apple Silicon it works locally).
+- CPU encoding: slow on weak machines.
+- The frame-analysis layer (Vision) and face tracking are off by default (experimental, resource-heavy).
 
-```bash
-sqlite3 data/videomaker.db "DELETE FROM prompt_settings WHERE key='pass3_virtual_cut';"
-```
+---
 
-После рестарта сервер создаст дефолтный промпт заново.
-
-## Troubleshooting
-
-- **UI говорит «Не настроен ни один LLM-провайдер»** — проверь что в
-  `.env` выставлен хотя бы `GEMINI_API_KEY` и перезапусти `./run.sh`.
-- **HEVC output меньше 15 Mbps** — проверь `ffprobe data/artifacts/<id>/reels/<reel>.mp4`.
-  Если `bit_rate` < 15M, VideoToolbox может игнорировать `-b:v` при
-  особо простом контенте. В `config/export_presets.yaml` можно поднять
-  `video_maxrate` или переключиться на CRF-подобный режим через `-q:v`.
-- **Транскрибация на русском языке неточная** — попробуй Deepgram nova-3
-  (добавь `DEEPGRAM_API_KEY` в `.env`). На длинных видео и сложных
-  акцентах он обычно точнее mlx-whisper.
-- **Рилсы получаются не из разных мест** — отредактируй промпт
-  `pass3_virtual_cut` в `/settings/prompts`, подчеркни требование
-  «склейка из 2-5 коротких фраз из РАЗНЫХ мест исходного видео».
-
-## Прогресс MVP
-
-| # | Шаг | Статус |
-|---|-----|--------|
-| 1 | Project scaffold | ✅ |
-| 2 | FastAPI skeleton + SSE + persistence | ✅ |
-| 3 | Transcriber (mlx-whisper + deepgram) | ✅ |
-| 4 | Multi-pass LLM analyzer с RAG-chunking | ✅ |
-| 5 | Next.js UI (upload, job list, progress) | ✅ |
-| 6 | Silence cutter + filler filter | ✅ |
-| 7 | Renderer (ffmpeg VideoToolbox HEVC) | ✅ |
-| 8 | Subtitles (ASS burn-in) | ✅ |
-| 9 | Prompts editor UI | ✅ |
-| 10 | E2E integration tests (real ffmpeg) | ✅ |
-
-## v0.3 (сделано)
-
-- Редактор стилей субтитров с live preview (`/settings/subtitles`)
-- 4 built-in пресета + user CRUD, API + LocalStorage favourite fonts
-- Поддержка позиционирования: top/center/bottom с учётом letterbox в fit
-
-## Запланировано на v1
-
-- Nano Banana B-roll генерация на паузах
-- Ken Burns / zoom transitions
-- Цветокоррекция LUT
-- Word-karaoke стиль субтитров
-- Плашки CTA / «подписаться»
-- Ручная правка таймкодов на canvas
-
-## Лицензия
-
-Proprietary. Внутренний инструмент.
+<div align="center">
+  <sub>Reelibra · самурайская латунь на чёрном лаке / brass on black lacquer</sub>
+</div>

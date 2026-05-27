@@ -44,7 +44,7 @@ export function FilterChipRow({ value, onChange, counts }: Props) {
             aria-selected={active}
             onClick={() => onChange(chip.key)}
             className={[
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors duration-150",
+              "inline-flex items-center gap-2 rounded-none border px-3 py-1.5 text-xs font-medium transition-colors duration-150",
               active
                 ? "border-[color:var(--text-primary)] bg-[color:var(--text-primary)] text-[color:var(--text-inverse)]"
                 : "border-[color:var(--border-default)] bg-[color:var(--surface-raised)] text-[color:var(--text-secondary)] hover:border-[color:var(--text-primary)] hover:text-[color:var(--text-primary)]",
@@ -61,8 +61,8 @@ export function FilterChipRow({ value, onChange, counts }: Props) {
             <span
               className={
                 active
-                  ? "rounded-full bg-white/20 px-1.5 text-[10px] font-mono"
-                  : "rounded-full bg-[color:var(--surface-sunken)] px-1.5 text-[10px] font-mono text-[color:var(--text-muted)]"
+                  ? "rounded-none bg-black/20 px-1.5 text-[10px] font-mono"
+                  : "rounded-none bg-[color:var(--surface-sunken)] px-1.5 text-[10px] font-mono text-[color:var(--text-muted)]"
               }
             >
               {count}

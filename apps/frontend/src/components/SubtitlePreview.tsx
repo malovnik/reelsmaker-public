@@ -353,7 +353,7 @@ export function SubtitlePreview({
     <div className="flex flex-col gap-2">
       <div
         ref={containerRef}
-        className="relative overflow-hidden rounded-lg border border-[color:var(--border-default)] bg-gradient-to-br from-violet-700 via-purple-600 to-fuchsia-600 shadow-inner"
+        className="relative overflow-hidden border border-[color:var(--border-default)] bg-[color:var(--ink-3)]"
         style={{
           width: `${previewWidth}px`,
           height: `${previewHeight}px`,

@@ -55,7 +55,7 @@ export function JobHero({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium"
+            className="inline-flex items-center gap-1.5 rounded-none border px-2.5 py-1 text-[11px] font-medium"
             style={{
               color,
               borderColor: color,
@@ -86,7 +86,7 @@ export function JobHero({
             {progress}%
           </span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-[color:var(--surface-sunken)]">
+        <div className="h-2 overflow-hidden rounded-none bg-[color:var(--surface-sunken)]">
           <div
             className={[
               "h-full transition-all duration-500",
@@ -144,7 +144,7 @@ function StatusPill({ status, label }: { status: string; label: string }) {
   };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+      className={`inline-flex items-center gap-1.5 rounded-none px-2.5 py-1 text-[11px] font-semibold ${
         tone[status] ?? tone.pending
       }`}
     >

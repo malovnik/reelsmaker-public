@@ -1,6 +1,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, ApiError, type PromptPayload } from "@/lib/api";
+import { api, type PromptPayload } from "@/lib/api";
+import { useToast } from "@/contexts/ToastContext";
 
 const PROMPT_DESCRIPTIONS: Record<string, string> = {
   pass1_explicit:
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function PromptsEditorClient({ initial }: Props) {
+  const toast = useToast();
   const [prompts, setPrompts] = useState<PromptPayload[]>(initial);
   const [selectedKey, setSelectedKey] = useState<string>(initial[0]?.key ?? "");
   const [saving, setSaving] = useState(false);
@@ -60,9 +62,7 @@ export function PromptsEditorClient({ initial }: Props) {
       );
       setFlash({ kind: "ok", message: "Сохранено" });
     } catch (err) {
-      const detail =
-        err instanceof ApiError ? JSON.stringify(err.detail) : String(err);
-      setFlash({ kind: "error", message: detail });
+      toast.showError(err);
     } finally {
       setSaving(false);
       if (flashTimerRef.current !== null) {

@@ -125,7 +125,7 @@ export function JobCard({
           )}
         </div>
         <span
-          className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          className="inline-flex shrink-0 items-center rounded-none px-2 py-0.5 text-[10px] font-semibold"
           style={{
             background: `${profileColor}22`,
             color: profileColor,
@@ -138,7 +138,7 @@ export function JobCard({
           <RenameableTitle job={job} onRename={onRename} />
         </div>
         <span
-          className={`hidden shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold sm:inline-flex ${meta.bg} ${meta.text}`}
+          className={`hidden shrink-0 items-center gap-1.5 rounded-none px-2 py-0.5 text-[10px] font-semibold sm:inline-flex ${meta.bg} ${meta.text}`}
         >
           <span className={`size-1.5 rounded-full ${meta.dot}`} />
           {meta.label}
@@ -203,7 +203,7 @@ export function JobCard({
         )}
 
         <span
-          className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium backdrop-blur-md"
+          className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-none border px-2.5 py-1 text-[11px] font-medium backdrop-blur-md"
           style={{
             color: profileColor,
             borderColor: profileColor,
@@ -230,7 +230,7 @@ export function JobCard({
             aria-label={isSelected ? "Снять выбор" : "Выбрать нарезку"}
             className={`absolute right-3 top-3 flex size-8 items-center justify-center rounded-full border backdrop-blur transition-opacity ${
               isSelected
-                ? "border-white/40 bg-[color:var(--accent-primary)] text-white opacity-100"
+                ? "border-white/40 bg-[color:var(--accent-primary)] text-[color:var(--accent-on-primary)] opacity-100"
                 : "border-[color:var(--border-default)] bg-[color:var(--surface-overlay)] text-[color:var(--text-secondary)] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
             }`}
           >
@@ -274,7 +274,7 @@ export function JobCard({
             onRename={onRename}
           />
           <span
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.bg} ${meta.text}`}
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-none px-2 py-0.5 text-[10px] font-semibold ${meta.bg} ${meta.text}`}
           >
             <span className={`size-1.5 rounded-full ${meta.dot}`} />
             {meta.label}

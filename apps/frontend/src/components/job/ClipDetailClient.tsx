@@ -278,7 +278,7 @@ function LikeButton({
   const toneClasses = active
     ? tone === "accent"
       ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-[color:var(--ink)]"
-      : "border-[color:var(--danger)] bg-[color:var(--danger)] text-white"
+      : "border-[color:var(--danger)] bg-[color:var(--danger)] text-[color:var(--paper)]"
     : "border-[color:var(--line)] bg-[color:var(--ink-2)] text-[color:var(--paper-dim)] hover:border-[color:var(--mute)] hover:text-[color:var(--paper)]";
   return (
     <button

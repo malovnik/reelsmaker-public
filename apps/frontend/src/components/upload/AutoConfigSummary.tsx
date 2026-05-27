@@ -53,7 +53,7 @@ export function AutoConfigSummary({
       ? "text-[color:var(--success)]"
       : confidencePct >= 40
       ? "text-[color:var(--warning)]"
-      : "text-rose-700";
+      : "text-[color:var(--danger)]";
 
   const wps = Number(data.audio_features.wps ?? 0);
   const pitch = Number(data.audio_features.pitch_std_hz ?? 0);
@@ -64,19 +64,19 @@ export function AutoConfigSummary({
     <div className="rounded-2xl border border-[color:var(--line-soft)] bg-[color:var(--ink-2)]/60 p-6 space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-stone-900">
+          <h3 className="text-lg font-semibold text-[color:var(--text-primary)]">
             Автоматический режим проанализировал видео
           </h3>
           <p className={`text-sm ${confidenceClass}`}>
             Уверенность: {confidencePct}%
             {data.llm_fallback_applied && (
-              <span className="ml-2 text-stone-500 text-xs">
+              <span className="ml-2 text-[color:var(--text-muted)] text-xs">
                 · уточнено через Gemini
               </span>
             )}
           </p>
         </div>
-        <div className="text-right text-xs text-stone-500">
+        <div className="text-right text-xs text-[color:var(--text-muted)]">
           {formatDuration(duration)} · {data.audio_features.num_words} слов
         </div>
       </div>
@@ -95,7 +95,7 @@ export function AutoConfigSummary({
       </div>
 
       <div className="border-t border-[color:var(--line-soft)] pt-4">
-        <h4 className="text-sm font-medium text-stone-700 mb-2">
+        <h4 className="text-sm font-medium text-[color:var(--text-secondary)] mb-2">
           Принятые решения
         </h4>
         <ul className="space-y-1.5 text-sm">
@@ -160,30 +160,30 @@ export function AutoConfigSummary({
 
       {showDetails && (
         <div className="border-t border-[color:var(--line-soft)] pt-4 space-y-2">
-          <h4 className="text-sm font-medium text-stone-700">
-            Полный evidence chain ({data.decisions.length} решений)
+          <h4 className="text-sm font-medium text-[color:var(--text-secondary)]">
+            Полный список решений ({data.decisions.length})
           </h4>
           <ul className="space-y-2 text-xs max-h-80 overflow-y-auto">
             {data.decisions.map((d, i) => (
               <li key={i} className="border border-[color:var(--line-soft)] rounded p-2">
                 <div className="flex justify-between">
-                  <span className="font-medium text-stone-900">
+                  <span className="font-medium text-[color:var(--text-primary)]">
                     {d.parameter}
                   </span>
                   <span
                     className={
                       d.source === "safety_clamp"
-                        ? "text-rose-700"
+                        ? "text-[color:var(--danger)]"
                         : d.source === "llm"
                         ? "text-[color:var(--gold)]"
-                        : "text-stone-500"
+                        : "text-[color:var(--text-muted)]"
                     }
                   >
                     {d.source} · {Math.round(d.confidence * 100)}%
                   </span>
                 </div>
-                <div className="text-stone-700">{String(d.value)}</div>
-                <div className="text-stone-500">{d.reasoning}</div>
+                <div className="text-[color:var(--text-secondary)]">{String(d.value)}</div>
+                <div className="text-[color:var(--text-muted)]">{d.reasoning}</div>
               </li>
             ))}
           </ul>
@@ -194,14 +194,14 @@ export function AutoConfigSummary({
         <button
           type="button"
           onClick={onAccept}
-          className="flex-1 bg-stone-900 hover:bg-stone-800 text-stone-50 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
+          className="flex-1 rounded-lg bg-[color:var(--accent-primary)] px-4 py-2.5 text-sm font-medium text-[color:var(--accent-on-primary)] transition-colors hover:bg-[color:var(--accent-primary-hover)]"
         >
           Запустить с этими настройками
         </button>
         <button
           type="button"
           onClick={() => setShowDetails((v) => !v)}
-          className="px-4 py-2.5 text-sm text-stone-600 hover:text-stone-900 border border-[color:var(--line-soft)] rounded-lg transition-colors"
+          className="rounded-lg border border-[color:var(--line-soft)] px-4 py-2.5 text-sm text-[color:var(--text-secondary)] transition-colors hover:text-[color:var(--text-primary)]"
         >
           {showDetails ? "Скрыть детали" : "Детали"}
         </button>
@@ -209,7 +209,7 @@ export function AutoConfigSummary({
           type="button"
           onClick={handleClear}
           disabled={clearing}
-          className="px-4 py-2.5 text-sm text-stone-600 hover:text-stone-900 border border-[color:var(--line-soft)] rounded-lg transition-colors disabled:opacity-50"
+          className="rounded-lg border border-[color:var(--line-soft)] px-4 py-2.5 text-sm text-[color:var(--text-secondary)] transition-colors hover:text-[color:var(--text-primary)] disabled:opacity-50"
         >
           {clearing
             ? "Сбрасываем…"
@@ -219,7 +219,7 @@ export function AutoConfigSummary({
         </button>
       </div>
       {clearError && (
-        <p className="text-xs text-rose-700">{clearError}</p>
+        <p className="text-xs text-[color:var(--danger)]">{clearError}</p>
       )}
     </div>
   );
@@ -227,9 +227,9 @@ export function AutoConfigSummary({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-white border border-[color:var(--line-soft)] p-3">
-      <div className="text-xs text-stone-500 mb-0.5">{label}</div>
-      <div className="text-sm font-medium text-stone-900">{value}</div>
+    <div className="rounded-lg border border-[color:var(--line-soft)] bg-[color:var(--surface-raised)] p-3">
+      <div className="text-xs text-[color:var(--text-muted)] mb-0.5">{label}</div>
+      <div className="text-sm font-medium text-[color:var(--text-primary)]">{value}</div>
     </div>
   );
 }
@@ -237,8 +237,8 @@ function Metric({ label, value }: { label: string; value: string }) {
 function DecisionRow({ label, value }: { label: string; value: string }) {
   return (
     <li className="flex justify-between gap-4 py-0.5">
-      <span className="text-stone-600">{label}</span>
-      <span className="text-stone-900 text-right">{value}</span>
+      <span className="text-[color:var(--text-secondary)]">{label}</span>
+      <span className="text-[color:var(--text-primary)] text-right">{value}</span>
     </li>
   );
 }

@@ -25,6 +25,7 @@ import {
   Step,
   ToggleRow,
 } from "./WizardSteps";
+import { resolveHint } from "@/components/settings-shared";
 import { useToast, useWizardStateContext } from "@/contexts";
 import {
   ASPECTS,
@@ -59,6 +60,17 @@ const SOURCE_LANG_LABELS: Record<SourceLanguage, string> = {
 const FIT_MODE_LABEL: Record<FitMode, string> = {
   fill: "Заполнить кадр + центрировать лицо",
   fit: "Сохранить весь кадр (чёрные поля)",
+};
+
+const PROVIDER_LABEL: Record<string, string> = {
+  gemini: "Google Gemini",
+  zhipu: "Zhipu GLM",
+};
+
+const TRANSCRIBER_LABEL: Record<string, string> = {
+  stable_ts_mlx: "Локальный, точные тайминги (stable-ts)",
+  mlx: "Локальный, быстрый (MLX Whisper)",
+  deepgram: "Облачный (Deepgram)",
 };
 
 const PROFILE_LABEL: Record<string, string> = {
@@ -166,15 +178,17 @@ export function UploadWizard({
         title="Под какой тип видео нарезаем"
         hint="Если не уверен — выбери любой. После загрузки мы подскажем точный профиль."
       >
-        <ProfileSelector
-          value={state.visionProfile}
-          onChange={actions.setVisionProfile}
-          masks={profileMasks}
-        />
+        <Field label="Профиль кадра" hintKey="vision_profile">
+          <ProfileSelector
+            value={state.visionProfile}
+            onChange={actions.setVisionProfile}
+            masks={profileMasks}
+          />
+        </Field>
       </Step>
 
       {state.projects.length > 0 && (
-        <Field label="Проект (папка)">
+        <Field label="Проект (папка)" hintKey="upload_project">
           <select
             value={state.projectId ?? ""}
             onChange={(e) => {
@@ -190,9 +204,6 @@ export function UploadWizard({
               </option>
             ))}
           </select>
-          <span className="text-[11px] text-[color:var(--text-muted)]">
-            Готовый джоб попадёт в выбранную папку проекта.
-          </span>
         </Field>
       )}
 
@@ -204,6 +215,7 @@ export function UploadWizard({
           onChange={onSelect}
           className="hidden"
         />
+        <Field label="Исходное видео" hintKey="upload_video_source">
         {state.file ? (
           <VideoPreviewCard file={state.file} onRemove={actions.clearSelectedFile} />
         ) : (
@@ -254,11 +266,12 @@ export function UploadWizard({
             </span>
           </div>
         )}
+        </Field>
       </Step>
 
       <Step index={3} title="Формат и количество">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <Field label="Соотношение сторон">
+          <Field label="Соотношение сторон" hintKey="target_aspect">
             <div className="flex flex-col gap-2">
               <div className="grid grid-cols-4 gap-1 rounded-lg border border-[color:var(--border-default)] bg-[color:var(--surface-sunken)] p-1">
                 {ASPECTS.map((a) => (
@@ -268,7 +281,7 @@ export function UploadWizard({
                     onClick={() => actions.setAspect(a)}
                     aria-pressed={state.aspect === a}
                     className={[
-                      "flex flex-col items-center justify-center gap-1 rounded-md px-2 py-2 text-xs font-medium transition-colors",
+                      "flex min-h-11 flex-col items-center justify-center gap-1 rounded-md px-2 py-2 text-xs font-medium transition-colors",
                       state.aspect === a
                         ? "bg-[color:var(--surface-raised)] text-[color:var(--text-primary)] shadow-[var(--shadow-xs)]"
                         : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]",
@@ -283,7 +296,7 @@ export function UploadWizard({
             </div>
           </Field>
 
-          <Field label="Количество рилсов">
+          <Field label="Количество рилсов" hintKey="reel_count_mode">
             <div className="flex items-center gap-3">
               <div className="flex rounded-lg border border-[color:var(--border-default)] bg-[color:var(--surface-sunken)] p-1">
                 <button
@@ -291,7 +304,7 @@ export function UploadWizard({
                   onClick={() => actions.setReelCountMode("auto")}
                   aria-pressed={state.reelCountMode === "auto"}
                   className={[
-                    "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                    "min-h-11 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                     state.reelCountMode === "auto"
                       ? "bg-[color:var(--surface-raised)] text-[color:var(--text-primary)] shadow-[var(--shadow-xs)]"
                       : "text-[color:var(--text-muted)]",
@@ -304,7 +317,7 @@ export function UploadWizard({
                   onClick={() => actions.setReelCountMode("custom")}
                   aria-pressed={state.reelCountMode === "custom"}
                   className={[
-                    "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                    "min-h-11 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                     state.reelCountMode === "custom"
                       ? "bg-[color:var(--surface-raised)] text-[color:var(--text-primary)] shadow-[var(--shadow-xs)]"
                       : "text-[color:var(--text-muted)]",
@@ -347,14 +360,10 @@ export function UploadWizard({
                     );
                   }}
                   disabled={state.reelCountMode !== "custom"}
-                  className="w-16 rounded-md border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-2 py-1 text-center font-mono text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--accent-primary)] disabled:opacity-40"
+                  className="h-11 w-16 rounded-md border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-2 text-center font-mono text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--accent-primary)] disabled:opacity-40"
                 />
               </div>
             </div>
-            <span className="text-[11px] text-[color:var(--text-muted)]">
-              В авто-режиме получается около 12 рилсов на каждые 20 минут
-              исходного видео.
-            </span>
           </Field>
         </div>
       </Step>
@@ -362,7 +371,7 @@ export function UploadWizard({
       {subtitlePresets.length > 0 && (
         <Step index={4} title="Субтитры">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto]">
-            <Field label="Стиль">
+            <Field label="Стиль" hintKey="subtitle_preset">
               <div className="flex items-center gap-2">
                 <select
                   value={state.subtitlePresetId ?? ""}
@@ -412,7 +421,10 @@ export function UploadWizard({
       )}
 
       <Step index={5} title="Пост-продакшн">
-        <Field label="Пресет (интро и аутро, нормализация звука, зум)">
+        <Field
+          label="Пресет (интро и аутро, нормализация звука, зум)"
+          hintKey="post_production_preset"
+        >
           <div className="flex items-center gap-2">
             <select
               value={state.postProductionPresetId ?? ""}
@@ -447,24 +459,28 @@ export function UploadWizard({
             </span>
             <OverrideCheckbox
               label="интро"
+              hintKey="pp_override_intro"
               checked={state.overrides.enable_intro !== false}
               disabled={!state.selectedPostProductionPreset.intro_asset}
               onChange={(v) => actions.setOverride("enable_intro", v)}
             />
             <OverrideCheckbox
               label="аутро"
+              hintKey="pp_override_outro"
               checked={state.overrides.enable_outro !== false}
               disabled={!state.selectedPostProductionPreset.outro_asset}
               onChange={(v) => actions.setOverride("enable_outro", v)}
             />
             <OverrideCheckbox
               label="зум"
+              hintKey="pp_override_zoom"
               checked={state.overrides.enable_zoom !== false}
               disabled={!state.selectedPostProductionPreset.config.zoom_enabled}
               onChange={(v) => actions.setOverride("enable_zoom", v)}
             />
             <OverrideCheckbox
               label="нормализация звука"
+              hintKey="pp_override_loudnorm"
               checked={state.overrides.enable_loudnorm !== false}
               disabled={
                 !state.selectedPostProductionPreset.config.audio_normalize_enabled
@@ -473,6 +489,7 @@ export function UploadWizard({
             />
             <OverrideCheckbox
               label="чёрно-белое"
+              hintKey="pp_override_bw"
               checked={state.overrides.enable_bw !== false}
               disabled={!state.selectedPostProductionPreset.config.bw_enabled}
               onChange={(v) => actions.setOverride("enable_bw", v)}
@@ -481,8 +498,9 @@ export function UploadWizard({
         )}
         {state.selectedPostProductionPreset?.companion_asset && (
           <div className="mt-3 flex flex-col gap-2 rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-sunken)] p-3">
-            <span className="text-[11px] uppercase tracking-wider text-[color:var(--text-muted)]">
+            <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-[color:var(--text-muted)]">
               Split-screen для этого видео
+              {resolveHint({ hintKey: "split_screen_override" }).adornment}
             </span>
             <span className="text-[11px] leading-relaxed text-[color:var(--text-muted)]">
               Пресет содержит companion «{state.selectedPostProductionPreset.companion_asset.name}».
@@ -505,7 +523,7 @@ export function UploadWizard({
                     }}
                     aria-pressed={active}
                     className={[
-                      "flex-1 rounded-[6px] px-2 py-1.5 text-xs font-medium transition-colors",
+                      "min-h-11 flex-1 rounded-[6px] px-2 py-1.5 text-xs font-medium transition-colors",
                       active
                         ? "bg-[color:var(--surface-sunken)] text-[color:var(--text-primary)] shadow-[var(--shadow-xs)]"
                         : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]",
@@ -566,12 +584,13 @@ export function UploadWizard({
       <Step index={6} title="Дополнительная инструкция (опционально)">
         <Field
           label="Доп-промпт для этого видео"
+          hintKey="custom_system_prompt"
           help={(
             <>
               Если заполнено — этот текст приклеится в самое начало
-              system-prompt всех LLM-вызовов (12 агентов). Используй для
-              таргетинга темы, особенностей спикера или стилистических
-              правил. Пусто = стандартное поведение.
+              инструкции всех вызовов ИИ (12 агентов). Используй для
+              темы видео, особенностей спикера или правил стиля.
+              Пусто — стандартное поведение.
             </>
           )}
         >
@@ -627,17 +646,17 @@ export function UploadWizard({
 
         <div className="mt-5 flex flex-col gap-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Распознавание речи">
+            <Field label="Распознавание речи" hintKey="transcriber">
               <Select
                 value={state.transcriber}
                 onChange={actions.setTranscriber}
                 options={models.available_transcribers.map((t) => ({
                   value: t,
-                  label: t,
+                  label: TRANSCRIBER_LABEL[t] ?? t,
                 }))}
               />
             </Field>
-            <Field label="LLM-провайдер">
+            <Field label="Модель ИИ (провайдер)" hintKey="llm_provider">
               <Select
                 value={state.provider}
                 onChange={actions.setProvider}
@@ -645,13 +664,13 @@ export function UploadWizard({
                   .filter((p) => p === "gemini" || p === "zhipu")
                   .map((p) => ({
                     value: p,
-                    label: p,
+                    label: PROVIDER_LABEL[p] ?? p,
                   }))}
               />
             </Field>
-            <Field label="Режим нейросети">
+            <Field label="Режим нейросети" hintKey="network_mode_hint">
               <span className="text-[11px] text-[color:var(--text-muted)]">
-                Качество vs скорость переключается в
+                Качество против скорости переключается в
                 {" "}
                 <a
                   href="/settings/performance"
@@ -660,13 +679,13 @@ export function UploadWizard({
                   настройках производительности
                 </a>
                 {" "}
-                — там один глобальный переключатель на все стадии.
+                — там один общий переключатель на все стадии.
               </span>
             </Field>
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Язык исходника">
+            <Field label="Язык исходника" hintKey="source_language">
               <Select
                 value={state.sourceLang}
                 onChange={(v) => actions.setSourceLang(v as SourceLanguage)}
@@ -675,11 +694,8 @@ export function UploadWizard({
                   label: SOURCE_LANG_LABELS[l],
                 }))}
               />
-              <span className="text-[11px] text-[color:var(--text-muted)]">
-                Не-русский автоматически переведём на русский.
-              </span>
             </Field>
-            <Field label="Кадрирование">
+            <Field label="Кадрирование" hintKey="fit_mode">
               <Select
                 value={state.fitMode}
                 onChange={(v) => actions.setFitMode(v as FitMode)}
@@ -718,6 +734,7 @@ export function UploadWizard({
             id="use_proxy"
             label="Готовить рабочую копию 1080p"
             hint="Делаем лёгкую 1080p версию и работаем с ней. На 4K источниках ускоряет обработку в три-пять раз."
+            hintKey="use_proxy"
             checked={state.useProxy}
             onChange={actions.setUseProxy}
           />
@@ -725,6 +742,7 @@ export function UploadWizard({
             id="use_source_for_render"
             label="Финальный рендер из оригинала"
             hint="Берём для сборки исходное 4K. Дольше, но максимальное качество."
+            hintKey="use_source_for_render"
             checked={state.useSourceForRender}
             onChange={actions.setUseSourceForRender}
             disabled={!state.useProxy}
@@ -734,6 +752,7 @@ export function UploadWizard({
             id="force_reingest"
             label="Перетранскрибировать заново"
             hint="Если менял настройки распознавания или уверен, что предыдущая транскрипция была неточной. Обычно нужен редко — тот же файл читаем из кэша моментально."
+            hintKey="force_reingest"
             checked={state.forceReingest}
             onChange={actions.setForceReingest}
           />
@@ -741,47 +760,48 @@ export function UploadWizard({
       </details>
 
       <div className="flex flex-col gap-2 rounded-lg border border-[color:var(--line-soft)] bg-[color:var(--ink-2)] p-4">
-        <div className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)]">
           Режим монтажа
+          {resolveHint({ hintKey: "pipeline_mode" }).adornment}
         </div>
         <div className="flex gap-3">
-          <label className="flex cursor-pointer items-start gap-2 rounded-md border border-[color:var(--line-soft)] bg-white px-3 py-2 text-sm hover:border-[color:var(--line)] has-[:checked]:border-[color:var(--gold)] has-[:checked]:bg-[color:var(--ink-3)]">
+          <label className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md border border-[color:var(--line-soft)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm hover:border-[color:var(--line)] has-[:checked]:border-[color:var(--gold)] has-[:checked]:bg-[color:var(--ink-3)]">
             <input
               type="radio"
               name="pipeline_mode"
               value="auto"
               checked={state.pipelineMode === "auto"}
               onChange={() => actions.setPipelineMode("auto")}
-              className="mt-0.5"
+              className="mt-0.5 accent-[color:var(--accent-primary)]"
             />
             <span>
-              <span className="block font-medium text-stone-900">
+              <span className="block font-medium text-[color:var(--text-primary)]">
                 Автоматический (рекомендовано)
               </span>
-              <span className="text-xs text-stone-500">
+              <span className="text-xs text-[color:var(--text-muted)]">
                 Робот-монтажёр проанализирует дорожку и сам примет решения
               </span>
             </span>
           </label>
-          <label className="flex cursor-pointer items-start gap-2 rounded-md border border-[color:var(--line-soft)] bg-white px-3 py-2 text-sm hover:border-[color:var(--line)] has-[:checked]:border-[color:var(--gold)] has-[:checked]:bg-[color:var(--ink-3)]">
+          <label className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md border border-[color:var(--line-soft)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm hover:border-[color:var(--line)] has-[:checked]:border-[color:var(--gold)] has-[:checked]:bg-[color:var(--ink-3)]">
             <input
               type="radio"
               name="pipeline_mode"
               value="manual"
               checked={state.pipelineMode === "manual"}
               onChange={() => actions.setPipelineMode("manual")}
-              className="mt-0.5"
+              className="mt-0.5 accent-[color:var(--accent-primary)]"
             />
             <span>
-              <span className="block font-medium text-stone-900">Ручной</span>
-              <span className="text-xs text-stone-500">
-                Использовать настройки из /settings/performance
+              <span className="block font-medium text-[color:var(--text-primary)]">Ручной</span>
+              <span className="text-xs text-[color:var(--text-muted)]">
+                Использовать настройки из раздела «Производительность»
               </span>
             </span>
           </label>
         </div>
-        <p className="pt-1 text-[11px] leading-relaxed text-stone-500">
-          Автоматический режим решает за склейки, темп, акценты, сжатие пауз,
+        <p className="pt-1 text-[11px] leading-relaxed text-[color:var(--text-muted)]">
+          Автоматический режим решает за склейки, темп, акценты, сжатие пауз и
           движение камеры. Формат кадра, модель распознавания, зум, интро/аутро
           и чёрно-белый режим остаются под твоим контролем — их Auto не трогает.
         </p>

@@ -178,7 +178,7 @@ function ReelCardImpl({
                 <span className="w-24 text-[color:var(--text-secondary)]">
                   {p.label}
                 </span>
-                <div className="h-1 flex-1 overflow-hidden rounded-full bg-[color:var(--border-default)]">
+                <div className="h-1 flex-1 overflow-hidden rounded-none bg-[color:var(--border-default)]">
                   <div
                     className="h-full bg-[color:var(--accent-primary)] transition-all"
                     style={{ width: `${p.value}%` }}
@@ -455,15 +455,15 @@ function ScoreBadge({
 function colorForGrade(grade: ViralScoreBreakdown["grade"]): string {
   switch (grade) {
     case "A":
-      return "#4ade80";
+      return "var(--kogane)";
     case "A-":
-      return "#a3e635";
+      return "var(--gold)";
     case "B":
-      return "#fde047";
+      return "var(--copper)";
     case "B-":
-      return "#fb923c";
+      return "var(--mute-2)";
     case "C":
-      return "#f87171";
+      return "var(--danger)";
   }
 }
 

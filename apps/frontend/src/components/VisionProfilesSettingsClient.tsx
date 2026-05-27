@@ -2,13 +2,13 @@
 import { useMemo, useState } from "react";
 import {
   AGENT_NAMES,
-  ApiError,
   api,
   type AgentName,
   type ProfileMaskRead,
   type VisionProfile,
   type VisionProfileOverride,
 } from "@/lib/api";
+import { useToast } from "@/contexts/ToastContext";
 
 interface Props {
   initial: ProfileMaskRead[];
@@ -128,6 +128,7 @@ interface CardProps {
 }
 
 function ProfileCard({ mask, onUpdated }: CardProps) {
+  const toast = useToast();
   const [expanded, setExpanded] = useState(false);
   const [form, setForm] = useState<FormState>(() => maskToForm(mask));
   const [saving, setSaving] = useState(false);
@@ -166,11 +167,7 @@ function ProfileCard({ mask, onUpdated }: CardProps) {
       setForm(maskToForm(updated));
       setFlash({ kind: "ok", message: "Сохранено" });
     } catch (err) {
-      const detail =
-        err instanceof ApiError
-          ? JSON.stringify(err.detail)
-          : String(err);
-      setFlash({ kind: "error", message: detail });
+      toast.showError(err);
     } finally {
       setSaving(false);
       setTimeout(() => setFlash(null), 2500);
@@ -187,11 +184,7 @@ function ProfileCard({ mask, onUpdated }: CardProps) {
       setForm(maskToForm(updated));
       setFlash({ kind: "ok", message: "Вернули дефолт" });
     } catch (err) {
-      const detail =
-        err instanceof ApiError
-          ? JSON.stringify(err.detail)
-          : String(err);
-      setFlash({ kind: "error", message: detail });
+      toast.showError(err);
     } finally {
       setSaving(false);
       setTimeout(() => setFlash(null), 2500);
@@ -212,7 +205,7 @@ function ProfileCard({ mask, onUpdated }: CardProps) {
               {PROFILE_LABEL[mask.profile]}
             </h2>
             {mask.is_customized && (
-              <span className="rounded-full bg-[color:var(--accent-primary-subtle)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[color:var(--accent-primary-hover)]">
+              <span className="bg-[color:var(--accent-primary-subtle)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[color:var(--accent-primary-hover)]">
                 настроено
               </span>
             )}

@@ -129,7 +129,7 @@ function StageMarker({
   if (error) {
     return (
       <div
-        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--danger)] text-white shadow-sm"
+        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--danger)] text-[color:var(--paper)] shadow-sm"
         aria-hidden="true"
       >
         <svg
@@ -150,7 +150,7 @@ function StageMarker({
   if (past) {
     return (
       <div
-        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--accent-primary)] text-white"
+        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--accent-primary)] text-[color:var(--accent-on-primary)]"
         aria-hidden="true"
       >
         <svg

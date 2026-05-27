@@ -21,7 +21,7 @@ export function ManualEditingPresetCard({ onApply }: Props) {
         <button
           type="button"
           onClick={onApply}
-          className="shrink-0 rounded-none bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-violet-700"
+          className="shrink-0 rounded-none border border-[color:var(--gold)] px-3 py-1.5 text-xs font-semibold text-[color:var(--gold)] transition-colors hover:bg-[color:var(--gold)] hover:text-[color:var(--ink)]"
         >
           Применить
         </button>

@@ -6,6 +6,9 @@ import {
   type CaptionPreset,
 } from "@/lib/api/scheduler";
 import { CaptionPresetFormModal } from "./CaptionPresetFormModal";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
+import { humanizeError } from "@/lib/humanizeError";
 
 interface Props {
   initialPresets: CaptionPreset[];
@@ -63,6 +66,8 @@ export function CaptionPresetsDashboard({
   profiles,
   initialError,
 }: Props) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [presets, setPresets] = useState<CaptionPreset[]>(initialPresets);
   const [error, setError] = useState<string | null>(initialError);
   const [editing, setEditing] = useState<CaptionPreset | null>(null);
@@ -81,7 +86,8 @@ export function CaptionPresetsDashboard({
       setPresets(fresh);
       setError(null);
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : String(exc));
+      const human = humanizeError(exc);
+      setError(`${human.title}. ${human.detail}`);
     }
   }, []);
 
@@ -93,24 +99,30 @@ export function CaptionPresetsDashboard({
       });
       setPresets((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : String(exc));
+      toast.showError(exc);
     } finally {
       setTogglingId(null);
     }
-  }, []);
+  }, [toast]);
 
   const handleDelete = useCallback(async (preset: CaptionPreset) => {
-    if (!confirm(`Удалить пресет «${preset.name}»?`)) return;
+    const ok = await confirm({
+      title: `Удалить пресет «${preset.name}»?`,
+      description: "Шаблон подписи пропадёт из списка без возможности вернуть.",
+      confirmLabel: "Удалить",
+      destructive: true,
+    });
+    if (!ok) return;
     setDeletingId(preset.id);
     try {
       await schedulerApi.deletePreset(preset.id);
       setPresets((prev) => prev.filter((p) => p.id !== preset.id));
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : String(exc));
+      toast.showError(exc);
     } finally {
       setDeletingId(null);
     }
-  }, []);
+  }, [confirm, toast]);
 
   const modalOpen = creating || editing !== null;
 
@@ -184,7 +196,7 @@ export function CaptionPresetsDashboard({
                           </div>
                         </div>
                         <span
-                          className="mono shrink-0 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]"
+                          className="mono shrink-0 border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]"
                           style={{
                             color:
                               preset.position === "prepend"

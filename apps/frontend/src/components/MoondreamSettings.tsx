@@ -5,6 +5,7 @@ import {
   type VisionSettingsResponse,
   type VisionBackend,
 } from "@/lib/api";
+import { humanizeError } from "@/lib/humanizeError";
 
 interface Props {
   initial: VisionSettingsResponse;
@@ -52,9 +53,10 @@ export function MoondreamSettings({ initial }: Props) {
       setStatus({ kind: "saved" });
       setTimeout(() => setStatus({ kind: "idle" }), 2500);
     } catch (err) {
+      const human = humanizeError(err);
       setStatus({
         kind: "error",
-        message: err instanceof Error ? err.message : String(err),
+        message: `${human.title}. ${human.detail}`,
       });
     }
   }

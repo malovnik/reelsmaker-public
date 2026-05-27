@@ -6,6 +6,9 @@ import {
   type PublerAccount,
   type PublerNetwork,
 } from "@/lib/api/scheduler";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
+import { humanizeError } from "@/lib/humanizeError";
 
 interface Props {
   initialAccounts: PublerAccount[];
@@ -155,6 +158,8 @@ interface AccountCardProps {
 }
 
 function AccountCard({ account, profile, onSaved, onDeleted }: AccountCardProps) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const displayName = account.name || account.id;
   const network: PublerNetwork = profile?.network ?? inferNetwork(account);
 
@@ -187,17 +192,21 @@ function AccountCard({ account, profile, onSaved, onDeleted }: AccountCardProps)
       });
       onSaved(saved);
     } catch (exc) {
-      setLocalError(exc instanceof Error ? exc.message : String(exc));
+      toast.showError(exc);
     } finally {
       setSaving(false);
     }
-  }, [account.id, displayName, network, form, onSaved]);
+  }, [account.id, displayName, network, form, onSaved, toast]);
 
   const handleDelete = useCallback(async () => {
     if (!profile) return;
-    if (!confirm(`Удалить профиль «${displayName}»? Значения по умолчанию вернутся.`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Удалить профиль «${displayName}»?`,
+      description: "Для аккаунта снова вернутся значения по умолчанию.",
+      confirmLabel: "Удалить",
+      destructive: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     setLocalError(null);
     try {
@@ -205,11 +214,11 @@ function AccountCard({ account, profile, onSaved, onDeleted }: AccountCardProps)
       setForm(EMPTY_FORM);
       onDeleted();
     } catch (exc) {
-      setLocalError(exc instanceof Error ? exc.message : String(exc));
+      toast.showError(exc);
     } finally {
       setDeleting(false);
     }
-  }, [account.id, displayName, profile, onDeleted]);
+  }, [account.id, displayName, profile, onDeleted, confirm, toast]);
 
   const hasProfile = profile !== null;
 
@@ -227,7 +236,7 @@ function AccountCard({ account, profile, onSaved, onDeleted }: AccountCardProps)
         </div>
         <div className="flex items-center gap-2">
           <span
-            className="mono rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]"
+            className="mono border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]"
             style={{
               color: hasProfile ? "var(--gold)" : "var(--mute-2)",
               borderColor: hasProfile ? "var(--gold)" : "var(--mute-2)",
@@ -408,7 +417,8 @@ export function AccountProfilesDashboard({
       setAccounts(a);
       setProfiles(p);
     } catch (exc) {
-      setError(exc instanceof Error ? exc.message : String(exc));
+      const human = humanizeError(exc);
+      setError(`${human.title}. ${human.detail}`);
     } finally {
       setRefreshing(false);
     }

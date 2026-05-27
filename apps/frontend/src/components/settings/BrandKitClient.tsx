@@ -89,8 +89,10 @@ export function BrandKitClient() {
       setSavedFlash(true);
       setError(null);
       setTimeout(() => setSavedFlash(false), 1500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Сохранение не удалось");
+    } catch {
+      setError(
+        "Не получилось сохранить — в браузере кончилось место. Очисти кэш и попробуй снова.",
+      );
     }
   };
 

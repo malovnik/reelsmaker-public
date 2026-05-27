@@ -228,7 +228,7 @@ export function TinderClient({ job, initialReels }: Props) {
             viewport, иначе card + actions + hint vylazят за 100dvh. */}
         <div className="flex min-h-0 w-full flex-1 items-center justify-center">
           <div
-            className={`relative aspect-[9/16] h-full max-h-full overflow-hidden rounded-none border border-white/10 bg-neutral-900 shadow-2xl transition-transform duration-300 ease-out ${
+            className={`relative aspect-[9/16] h-full max-h-full overflow-hidden rounded-none border border-white/10 bg-[color:var(--ink-2)] shadow-2xl transition-transform duration-300 ease-out ${
               verdict === "like"
                 ? "rotate-3 translate-x-6 opacity-70"
                 : verdict === "dislike"
@@ -263,7 +263,7 @@ export function TinderClient({ job, initialReels }: Props) {
             </div>
           )}
           {duration !== undefined && (
-            <span className="absolute left-3 top-3 rounded-full bg-black/60 px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/85 backdrop-blur">
+            <span className="absolute left-3 top-3 rounded-none bg-black/60 px-2 py-0.5 font-mono text-[11px] tabular-nums text-white/85 backdrop-blur">
               {formatClock(currentTime)} / {formatClock(duration)}
             </span>
           )}
@@ -279,7 +279,7 @@ export function TinderClient({ job, initialReels }: Props) {
           )}
           {!isPlaying && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <span className="rounded-full border-2 border-white/60 px-4 py-1 text-xs uppercase tracking-[0.2em] text-white/80">
+              <span className="rounded-none border-2 border-white/60 px-4 py-1 text-xs uppercase tracking-[0.2em] text-white/80">
                 Пауза
               </span>
             </div>
@@ -433,7 +433,7 @@ function VerdictOverlay({ verdict }: { verdict: Verdict | null }) {
       label: "НЕ НРА",
     },
     skip: {
-      bg: "bg-neutral-500/70 text-neutral-900",
+      bg: "bg-[color:var(--mute)]/70 text-[color:var(--ink)]",
       label: "ПРОПУСК",
     },
   };
@@ -483,7 +483,7 @@ function SpeedSelector({
 }) {
   return (
     <div
-      className="flex items-center rounded-full border border-white/15 bg-white/5 p-0.5 font-mono text-[11px]"
+      className="flex items-center rounded-none border border-white/15 bg-white/5 p-0.5 font-mono text-[11px]"
       role="group"
       aria-label="Скорость воспроизведения"
     >
@@ -494,7 +494,7 @@ function SpeedSelector({
             key={speed}
             type="button"
             onClick={() => onChange(speed)}
-            className={`rounded-full px-2.5 py-0.5 tabular-nums transition-colors ${
+            className={`rounded-none px-2.5 py-0.5 tabular-nums transition-colors ${
               active
                 ? "bg-white text-black"
                 : "text-white/60 hover:text-white/90"

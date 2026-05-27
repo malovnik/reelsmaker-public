@@ -52,7 +52,9 @@ export function WaveformBar({
         const w = canvas.width;
         const h = canvas.height;
         cctx.clearRect(0, 0, w, h);
-        cctx.fillStyle = "#78716c";
+        cctx.fillStyle =
+          getComputedStyle(canvas).getPropertyValue("--mute").trim() ||
+          "#8A8278";
         const bw = w / BUCKETS;
         for (let i = 0; i < BUCKETS; i++) {
           const bh = (data[i] ?? 0) * h;

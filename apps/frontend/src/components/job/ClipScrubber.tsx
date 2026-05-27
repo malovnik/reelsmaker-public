@@ -105,7 +105,7 @@ export const ClipScrubber = forwardRef<ClipScrubberHandle, Props>(
               value={currentTime}
               onChange={onSeekBar}
               aria-label="Позиция воспроизведения"
-              className="h-1 w-full cursor-pointer appearance-none rounded-full bg-[color:var(--border-default)] accent-[color:var(--accent-primary)]"
+              className="h-1 w-full cursor-pointer appearance-none rounded-none bg-[color:var(--border-default)] accent-[color:var(--accent-primary)]"
             />
             <div className="mt-1 flex justify-between font-mono text-[11px] tabular-nums text-[color:var(--text-muted)]">
               <span>{formatTime(currentTime)}</span>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { ComposerStrategy } from "@/lib/api";
+import { resolveHint, type ControlHintKey } from "@/components/settings-shared";
 
 export function Step({
   index,
@@ -38,18 +39,29 @@ export function Step({
 export function Field({
   label,
   help,
+  hintKey,
   children,
 }: {
   label: string;
   help?: ReactNode;
+  /** Ключ реестра подсказок — добавляет (i)-тултип у метки + инлайн-подсказку. */
+  hintKey?: ControlHintKey;
   children: ReactNode;
 }) {
+  const hint = resolveHint({ hintKey });
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[color:var(--text-muted)]">
+      <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-[color:var(--text-muted)]">
         {label}
+        {hint.badgeNode}
+        {hint.adornment}
       </span>
       {children}
+      {hint.inline ? (
+        <span className="text-[11px] leading-relaxed text-[color:var(--text-muted)]">
+          {hint.inline}
+        </span>
+      ) : null}
       {help ? (
         <span className="text-[11px] leading-relaxed text-[color:var(--text-muted)]">
           {help}
@@ -88,34 +100,36 @@ export function OverrideCheckbox({
   checked,
   disabled,
   onChange,
+  hintKey,
 }: {
   label: string;
   checked: boolean;
   disabled: boolean;
   onChange: (value: boolean) => void;
+  hintKey?: ControlHintKey;
 }) {
+  const hint = resolveHint({ hintKey });
   return (
-    <label
-      className={`inline-flex items-center gap-2 text-xs ${
-        disabled
-          ? "cursor-not-allowed text-[color:var(--text-disabled)]"
-          : "cursor-pointer text-[color:var(--text-secondary)]"
-      }`}
-      title={
-        disabled
-          ? "В пресете эта опция не настроена"
-          : "Применить эту часть пресета к рилсу"
-      }
-    >
-      <input
-        type="checkbox"
-        checked={checked && !disabled}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.checked)}
-        className="size-3.5 accent-[color:var(--accent-primary)] disabled:opacity-40"
-      />
-      {label}
-    </label>
+    <span className="inline-flex items-center gap-1">
+      <label
+        className={`inline-flex min-h-11 items-center gap-2 py-2 text-xs ${
+          disabled
+            ? "cursor-not-allowed text-[color:var(--text-disabled)]"
+            : "cursor-pointer text-[color:var(--text-secondary)]"
+        }`}
+        title={disabled ? "В пресете эта опция не настроена" : undefined}
+      >
+        <input
+          type="checkbox"
+          checked={checked && !disabled}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+          className="size-4 accent-[color:var(--accent-primary)] disabled:opacity-40"
+        />
+        {label}
+      </label>
+      {hint.adornment}
+    </span>
   );
 }
 
@@ -123,6 +137,7 @@ export function ToggleRow({
   id,
   label,
   hint,
+  hintKey,
   checked,
   onChange,
   disabled,
@@ -131,25 +146,32 @@ export function ToggleRow({
   id: string;
   label: string;
   hint: string;
+  hintKey?: ControlHintKey;
   checked: boolean;
   onChange: (value: boolean) => void;
   disabled?: boolean;
   disabledReason?: string;
 }) {
   const effective = disabled ? false : checked;
+  const resolved = resolveHint({ hintKey });
+  const inline = resolved.inline || hint;
   return (
     <div
       className={`flex items-start justify-between gap-4 ${disabled ? "opacity-60" : ""}`}
     >
       <div className="flex flex-1 flex-col">
-        <label
-          htmlFor={id}
-          className="text-sm text-[color:var(--text-primary)]"
-        >
-          {label}
-        </label>
+        <span className="flex items-center gap-1.5">
+          <label
+            htmlFor={id}
+            className="text-sm text-[color:var(--text-primary)]"
+          >
+            {label}
+          </label>
+          {resolved.badgeNode}
+          {resolved.adornment}
+        </span>
         <p className="mt-1 text-xs text-[color:var(--text-muted)]">
-          {disabled && disabledReason ? disabledReason : hint}
+          {disabled && disabledReason ? disabledReason : inline}
         </p>
       </div>
       <button
@@ -159,20 +181,24 @@ export function ToggleRow({
         aria-checked={effective}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={[
-          "relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed",
-          effective
-            ? "bg-[color:var(--accent-primary)]"
-            : "bg-[color:var(--border-default)]",
-        ].join(" ")}
+        className="group/toggle relative flex size-11 shrink-0 items-center justify-center rounded-full disabled:cursor-not-allowed"
       >
         <span
           className={[
-            "inline-block size-5 transform rounded-full bg-white transition-transform",
-            effective ? "translate-x-[1.375rem]" : "translate-x-0.5",
+            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+            effective
+              ? "bg-[color:var(--accent-primary)]"
+              : "bg-[color:var(--border-default)]",
           ].join(" ")}
           aria-hidden="true"
-        />
+        >
+          <span
+            className={[
+              "inline-block size-5 transform rounded-full bg-[color:var(--surface-raised)] shadow-[var(--shadow-xs)] transition-transform",
+              effective ? "translate-x-[1.375rem]" : "translate-x-0.5",
+            ].join(" ")}
+          />
+        </span>
       </button>
     </div>
   );
@@ -218,16 +244,18 @@ export function ComposerStrategyBlock({
   value: ComposerStrategy;
   onChange: (next: ComposerStrategy) => void;
 }) {
+  const hint = resolveHint({ hintKey: "composer_strategy_override" });
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-[color:var(--line-soft)] bg-[color:var(--ink-2)] p-4">
-      <div className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-        Стиль монтажа (composer strategy)
+      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)]">
+        Стиль монтажа
+        {hint.adornment}
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {COMPOSER_STRATEGY_OPTIONS.map((opt) => (
           <label
             key={opt.value}
-            className="flex cursor-pointer items-start gap-2 rounded-md border border-[color:var(--line-soft)] bg-white px-3 py-2 text-sm hover:border-[color:var(--line)] has-[:checked]:border-[color:var(--gold)] has-[:checked]:bg-[color:var(--ink-3)]"
+            className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md border border-[color:var(--line-soft)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm hover:border-[color:var(--line)] has-[:checked]:border-[color:var(--gold)] has-[:checked]:bg-[color:var(--ink-3)]"
           >
             <input
               type="radio"
@@ -235,22 +263,22 @@ export function ComposerStrategyBlock({
               value={opt.value}
               checked={value === opt.value}
               onChange={() => onChange(opt.value)}
-              className="mt-0.5"
+              className="mt-0.5 accent-[color:var(--accent-primary)]"
             />
             <span>
-              <span className="block font-medium text-stone-900">
+              <span className="block font-medium text-[color:var(--text-primary)]">
                 {opt.title}
               </span>
-              <span className="text-xs leading-snug text-stone-500">
+              <span className="text-xs leading-snug text-[color:var(--text-muted)]">
                 {opt.hint}
               </span>
             </span>
           </label>
         ))}
       </div>
-      <p className="pt-1 text-[11px] leading-relaxed text-stone-500">
-        Plotline-стиль: определяет, как композитор собирает рилсы из ranked-
-        сегментов. Не-авто принудительно переопределяет решение advisor&apos;а.
+      <p className="pt-1 text-[11px] leading-relaxed text-[color:var(--text-muted)]">
+        Определяет, как композитор собирает рилсы из отобранных моментов. Любой
+        вариант кроме «Авто» переопределяет решение робота-монтажёра.
       </p>
     </div>
   );

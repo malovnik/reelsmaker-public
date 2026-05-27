@@ -96,7 +96,7 @@ export function AccountsPicker({
                       {displayName}
                     </span>
                     <span
-                      className="mono shrink-0 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]"
+                      className="mono shrink-0 rounded-none border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]"
                       style={{
                         color: "var(--mute-2)",
                         borderColor: "var(--line)",
@@ -111,7 +111,7 @@ export function AccountsPicker({
                   </div>
                   {hasProfile ? (
                     <span
-                      className="mono mt-1 inline-block w-fit rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]"
+                      className="mono mt-1 inline-block w-fit rounded-none border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em]"
                       style={{
                         color: "var(--gold)",
                         borderColor: "var(--gold)",

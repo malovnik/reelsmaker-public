@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   api,
-  ApiError,
   DEFAULT_SUBTITLE_STYLE,
   type FontListResponse,
   type SubtitleStyleConfig,
@@ -10,6 +9,8 @@ import {
 } from "@/lib/api";
 import { SubtitlePreview } from "@/components/SubtitlePreview";
 import { SubtitleStyleEditor } from "@/components/SubtitleStyleEditor";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const FAVOURITES_KEY = "videomaker:favourite-fonts";
 
@@ -24,6 +25,8 @@ export function SubtitleSettingsClient({
   initialPresets,
   initialFonts,
 }: Props) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [fontsState, setFontsState] = useState<FontListResponse>(initialFonts);
   const [refreshingFonts, setRefreshingFonts] = useState(false);
   const [presets, setPresets] =
@@ -137,11 +140,11 @@ export function SubtitleSettingsClient({
       setMode({ kind: "existing", presetId: created.id });
       showFlash("ok", `«${created.name}» создан`);
     } catch (err) {
-      showFlash("error", extractError(err));
+      toast.showError(err);
     } finally {
       setSaving(false);
     }
-  }, [draftName, draftStyle, showFlash]);
+  }, [draftName, draftStyle, showFlash, toast]);
 
   const handleUpdate = useCallback(async () => {
     if (mode.kind !== "existing" || current === null) return;
@@ -161,11 +164,11 @@ export function SubtitleSettingsClient({
       setPresets((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       showFlash("ok", "Сохранено");
     } catch (err) {
-      showFlash("error", extractError(err));
+      toast.showError(err);
     } finally {
       setSaving(false);
     }
-  }, [mode, current, draftName, draftStyle, showFlash]);
+  }, [mode, current, draftName, draftStyle, showFlash, toast]);
 
   const handleSetDefault = useCallback(async () => {
     if (mode.kind !== "existing") return;
@@ -182,11 +185,11 @@ export function SubtitleSettingsClient({
       );
       showFlash("ok", `«${updated.name}» теперь применяется по умолчанию`);
     } catch (err) {
-      showFlash("error", extractError(err));
+      toast.showError(err);
     } finally {
       setSaving(false);
     }
-  }, [mode, showFlash]);
+  }, [mode, showFlash, toast]);
 
   const handleDelete = useCallback(async () => {
     if (mode.kind !== "existing" || current === null) return;
@@ -197,7 +200,13 @@ export function SubtitleSettingsClient({
       );
       return;
     }
-    if (!window.confirm(`Удалить пресет «${current.name}»?`)) return;
+    const ok = await confirm({
+      title: `Удалить пресет «${current.name}»?`,
+      description: "Стиль субтитров пропадёт из списка без возможности вернуть.",
+      confirmLabel: "Удалить",
+      destructive: true,
+    });
+    if (!ok) return;
     setSaving(true);
     try {
       await api.deleteSubtitlePreset(current.id);
@@ -210,11 +219,11 @@ export function SubtitleSettingsClient({
       }
       showFlash("ok", "Удалено");
     } catch (err) {
-      showFlash("error", extractError(err));
+      toast.showError(err);
     } finally {
       setSaving(false);
     }
-  }, [mode, current, presets, selectPreset, startNewPreset, showFlash]);
+  }, [mode, current, presets, selectPreset, startNewPreset, showFlash, confirm, toast]);
 
   const canSave =
     mode.kind === "existing" && current !== null && !current.is_builtin;
@@ -228,11 +237,11 @@ export function SubtitleSettingsClient({
       setFontsState(fresh);
       showFlash("ok", `Найдено ${fresh.fonts.length} шрифтов`);
     } catch (err) {
-      showFlash("error", extractError(err));
+      toast.showError(err);
     } finally {
       setRefreshingFonts(false);
     }
-  }, [showFlash]);
+  }, [showFlash, toast]);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]">
@@ -267,12 +276,12 @@ export function SubtitleSettingsClient({
                   <span className="font-medium">{preset.name}</span>
                   <div className="flex gap-1">
                     {preset.is_default && (
-                      <span className="rounded-full bg-[color:var(--accent-primary)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[color:var(--accent-on-primary)]">
+                      <span className="bg-[color:var(--accent-primary)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[color:var(--accent-on-primary)]">
                         по&nbsp;умолч.
                       </span>
                     )}
                     {preset.is_builtin && (
-                      <span className="rounded-full border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-[color:var(--text-muted)]">
+                      <span className="border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-[color:var(--text-muted)]">
                         встроен.
                       </span>
                     )}
@@ -443,15 +452,4 @@ function formatTimeAgo(iso: string): string {
   } catch {
     return iso;
   }
-}
-
-function extractError(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (typeof err.detail === "object" && err.detail !== null) {
-      const detail = (err.detail as Record<string, unknown>).detail;
-      if (typeof detail === "string") return detail;
-    }
-    return JSON.stringify(err.detail);
-  }
-  return String(err);
 }

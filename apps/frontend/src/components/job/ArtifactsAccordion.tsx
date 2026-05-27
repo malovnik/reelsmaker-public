@@ -62,7 +62,7 @@ export function ArtifactsAccordion({ jobId, artifacts }: Props) {
                 className="transition-colors hover:bg-[color:var(--surface-sunken)]"
               >
                 <td className="px-5 py-2.5">
-                  <span className="rounded-full border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-2 py-0.5 text-[color:var(--text-secondary)]">
+                  <span className="rounded-none border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-2 py-0.5 text-[color:var(--text-secondary)]">
                     {KIND_LABEL[a.kind] ?? a.kind}
                   </span>
                 </td>

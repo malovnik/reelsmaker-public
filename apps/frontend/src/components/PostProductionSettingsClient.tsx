@@ -14,10 +14,11 @@ import {
   extractVideoThumbnail,
   readImageFileAsDataUrl,
 } from "@/lib/video-thumbnail";
+import { useToast } from "@/contexts/ToastContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
 import {
   AssetsColumn,
   AudioNormalizationSection,
-  extractDetail,
   IntroOutroSection,
   PresetIdentitySection,
   PresetListColumn,
@@ -70,6 +71,8 @@ export function PostProductionSettingsClient({
   initialAssets,
   initialPresets,
 }: Props) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [assets, setAssets] = useState<VideoAsset[]>(initialAssets);
   const [presets, setPresets] =
     useState<PostProductionPreset[]>(initialPresets);
@@ -126,25 +129,17 @@ export function PostProductionSettingsClient({
     try {
       setAssets(await api.listAssets());
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? `Не удалось загрузить ассеты: ${err.message}`
-          : "Не удалось загрузить ассеты",
-      );
+      toast.showError(err);
     }
-  }, []);
+  }, [toast]);
 
   const refreshPresets = useCallback(async () => {
     try {
       setPresets(await api.listPostProductionPresets());
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? `Не удалось загрузить пресеты: ${err.message}`
-          : "Не удалось загрузить пресеты",
-      );
+      toast.showError(err);
     }
-  }, []);
+  }, [toast]);
 
   const selectPreset = useCallback(
     (id: number | "new" | null) => {
@@ -184,29 +179,35 @@ export function PostProductionSettingsClient({
         setError(`Файл уже был загружен ранее как «${result.asset.name}»`);
       }
     } catch (err) {
-      setError(err instanceof ApiError ? extractDetail(err) : String(err));
+      toast.showError(err);
     } finally {
       setUploadingAsset(false);
     }
-  }, [assetName, refreshAssets]);
+  }, [assetName, refreshAssets, toast]);
 
   const onDeleteAsset = useCallback(
     async (id: number) => {
-      if (!confirm("Удалить ролик? Файл будет стёрт с диска.")) return;
+      const ok = await confirm({
+        title: "Удалить ролик?",
+        description: "Файл будет стёрт с диска без возможности вернуть.",
+        confirmLabel: "Удалить",
+        destructive: true,
+      });
+      if (!ok) return;
       try {
         await api.deleteAsset(id);
         await refreshAssets();
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
-          setError(
-            "Этот ролик используется в одном или нескольких пресетах — удали его из них сначала",
-          );
+          toast.error("Ролик используется в пресетах", {
+            detail: "Сначала убери его из пресетов, потом удаляй.",
+          });
         } else {
-          setError(err instanceof ApiError ? extractDetail(err) : String(err));
+          toast.showError(err);
         }
       }
     },
-    [refreshAssets],
+    [confirm, refreshAssets, toast],
   );
 
   const onSavePreset = useCallback(async () => {
@@ -242,15 +243,21 @@ export function PostProductionSettingsClient({
         setDraft(presetToDraft(updated));
       }
     } catch (err) {
-      setError(err instanceof ApiError ? extractDetail(err) : String(err));
+      toast.showError(err);
     } finally {
       setBusy(false);
     }
-  }, [draft, refreshPresets]);
+  }, [draft, refreshPresets, toast]);
 
   const onDeletePreset = useCallback(async () => {
     if (draft.id === null) return;
-    if (!confirm(`Удалить пресет «${draft.name}»?`)) return;
+    const ok = await confirm({
+      title: `Удалить пресет «${draft.name}»?`,
+      description: "Пресет пропадёт из списка. Уже запущенные нарезки не затронет.",
+      confirmLabel: "Удалить",
+      destructive: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {
@@ -260,16 +267,16 @@ export function PostProductionSettingsClient({
       setDraft({ ...EMPTY_DRAFT });
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
-        setError(
-          "Этот пресет сейчас используется в обработке — дождись завершения нарезки",
-        );
+        toast.error("Пресет сейчас в работе", {
+          detail: "Дождись окончания нарезки и попробуй снова.",
+        });
       } else {
-        setError(err instanceof ApiError ? extractDetail(err) : String(err));
+        toast.showError(err);
       }
     } finally {
       setBusy(false);
     }
-  }, [draft, refreshPresets]);
+  }, [confirm, draft, refreshPresets, toast]);
 
   const updateConfig = useCallback(
     <K extends keyof PostProductionConfig>(

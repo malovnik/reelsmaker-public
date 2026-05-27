@@ -218,7 +218,7 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
               disabled={disabled}
               aria-pressed={isActive}
               title={meta.hint}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              className={`inline-flex items-center gap-1.5 rounded-none border px-3 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 isActive
                   ? "border-[color:var(--accent-primary)] bg-[color:var(--accent-primary)] text-[color:var(--accent-on-primary)]"
                   : "border-[color:var(--border-default)] bg-[color:var(--surface-raised)] text-[color:var(--text-secondary)] hover:border-[color:var(--text-primary)] hover:text-[color:var(--text-primary)]"
@@ -262,7 +262,7 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
 
       {hasSelection && (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-6">
-          <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-[color:var(--border-default)] bg-[color:var(--surface-overlay)] px-4 py-2 shadow-[var(--shadow-lg)] backdrop-blur">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-none border border-[color:var(--border-default)] bg-[color:var(--surface-overlay)] px-4 py-2 shadow-[var(--shadow-lg)] backdrop-blur">
             <span className="text-xs text-[color:var(--text-secondary)]">
               Выбрано {formatReelCount(selectedCount)}
             </span>
@@ -278,7 +278,7 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
               type="button"
               onClick={saveSelected}
               disabled={isPending}
-              className="rounded-full bg-[color:var(--surface-raised)] px-3 py-1 text-xs font-medium text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-none bg-[color:var(--surface-raised)] px-3 py-1 text-xs font-medium text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
               title="Скопировать отобранные в подпапку saved/"
             >
               Сохранить в папку
@@ -287,7 +287,7 @@ export function ReelGrid({ jobId, reels, onChange }: Props) {
               type="button"
               onClick={deleteSelected}
               disabled={isPending}
-              className="btn btn-danger px-4 py-1.5 rounded-full disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn btn-danger px-4 py-1.5 rounded-none disabled:cursor-not-allowed disabled:opacity-60"
             >
               Удалить
             </button>

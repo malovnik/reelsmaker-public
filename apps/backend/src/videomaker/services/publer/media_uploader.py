@@ -4,7 +4,9 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import os
+import shutil
 import tempfile
+from functools import lru_cache
 from pathlib import Path
 
 from videomaker.core.logging import get_logger
@@ -75,12 +77,45 @@ async def upload_reel_to_publer(
             compressed.unlink()
 
 
+async def _has_videotoolbox_h264() -> bool:
+    """True если ffmpeg поддерживает `h264_videotoolbox` (Apple Silicon/macOS).
+
+    Результат кешируется (энкодеры не меняются в рантайме процесса).
+    """
+    return "h264_videotoolbox" in await _ffmpeg_encoders()
+
+
+@lru_cache(maxsize=1)
+def _ffmpeg_path() -> str | None:
+    return shutil.which("ffmpeg")
+
+
+async def _ffmpeg_encoders() -> str:
+    path = _ffmpeg_path() or "ffmpeg"
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            path,
+            "-hide_banner",
+            "-encoders",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        stdout, _ = await proc.communicate()
+    except (FileNotFoundError, PermissionError):
+        return ""
+    return stdout.decode("utf-8", errors="replace")
+
+
 async def _reencode_to_h264(source: Path) -> Path:
-    """ffmpeg one-pass H.264 videotoolbox с target bitrate для ≈150 MB.
+    """ffmpeg one-pass H.264 с target bitrate для ≈150 MB.
 
     Формула: target_bitrate_bps = target_size_bytes × 8 / duration_sec - audio_bps.
     Длительность резолвим через ffprobe. Для 90-сек рилса 9:16 даёт ~12 Mbps
     видео, что с vbv-bufsize даёт высокое качество.
+
+    Энкодер выбирается в рантайме: `h264_videotoolbox` (Apple Silicon) если
+    доступен, иначе портируемый `libx264`. Без хардкода платформы — на Linux
+    (Railway) видеотулбокса нет, поэтому fallback гарантирует доставку.
     """
     duration_sec = await _probe_duration_sec(source)
     video_bitrate_bps = max(
@@ -95,15 +130,37 @@ async def _reencode_to_h264(source: Path) -> Path:
     os.close(out_fd)
     out_path = Path(out_str)
 
+    if await _has_videotoolbox_h264():
+        # Hardware encoder (macOS / Apple Silicon): bitrate-targeted.
+        video_args = [
+            "-c:v",
+            "h264_videotoolbox",
+            "-b:v",
+            str(video_bitrate_bps),
+        ]
+    else:
+        # Software fallback (Linux / Railway): bitrate-targeted с vbv-bufsize
+        # для эквивалентного контроля размера/качества.
+        bitrate_kbps = video_bitrate_bps // 1000
+        video_args = [
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-b:v",
+            f"{bitrate_kbps}k",
+            "-maxrate",
+            f"{bitrate_kbps}k",
+            "-bufsize",
+            f"{bitrate_kbps * 2}k",
+        ]
+
     cmd = [
         "ffmpeg",
         "-y",
         "-i",
         str(source),
-        "-c:v",
-        "h264_videotoolbox",
-        "-b:v",
-        str(video_bitrate_bps),
+        *video_args,
         "-pix_fmt",
         "yuv420p",
         "-c:a",

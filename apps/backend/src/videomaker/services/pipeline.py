@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -318,6 +319,11 @@ async def run_pipeline_safe(
                 artifacts=artifacts,
                 settings=settings,
             )
+    except asyncio.CancelledError:
+        # Отмена job (POST /jobs/{id}/cancel) — НЕ ошибка. Статус cancelled
+        # выставляет cancel-эндпоинт; здесь просто пробрасываем дальше.
+        log.info("pipeline_cancelled", job_id=job_id)
+        raise
     except FileNotFoundError as exc:
         log.exception("pipeline_missing_file", job_id=job_id)
         await service.mark_error(job_id, error=f"missing file: {exc}")

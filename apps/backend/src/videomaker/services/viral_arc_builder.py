@@ -11,7 +11,7 @@ Phase 9 (2026-04-22). Архитектура:
         ↓  _to_reel_plan (role mapping, validation)
     list[ReelPlan]
 
-Контракт ``build_viral_arcs(transcript, *, cfg) -> list[ReelPlan]`` —
+Контракт ``build_viral_arcs(transcript, *, cfg, pipeline_provider) -> list[ReelPlan]`` —
 совместимо с downstream ``pipeline_stages/render.py`` так же как legacy
 bottom_up output.
 
@@ -404,11 +404,17 @@ async def build_viral_arcs(
     transcript: TranscriptResult,
     *,
     cfg: Settings | None = None,
+    pipeline_provider: str | None = None,
 ) -> list[ReelPlan]:
     """Entry-point для `narrative_mode=viral_2026`.
 
     Pipeline: chunking → parallel Flash Lite → dedup → ReelPlan list.
     Возвращает рилсы отсортированные по composite_score desc.
+
+    ``pipeline_provider`` пробрасывается в ``build_llm_for_tier`` так же, как
+    в bottom-up стадиях (compression/reducer/...), чтобы viral-режим уважал
+    UI-выбор провайдера (gemini/zhipu). Для zhipu сериализация запросов
+    обеспечивается concurrency-gate внутри GLMClient (Coding Plan concurrency=1).
     """
     settings = cfg or get_settings()
 
@@ -423,9 +429,12 @@ async def build_viral_arcs(
         chunk_size_chars=_CHUNK_SIZE_CHARS,
         overlap_chars=_CHUNK_OVERLAP_CHARS,
         total_duration_sec=round(transcript.duration_sec, 1),
+        pipeline_provider=pipeline_provider or "gemini",
     )
 
-    llm = build_llm_for_tier("flash_lite", settings)
+    llm = build_llm_for_tier(
+        "flash_lite", settings, provider_override=pipeline_provider
+    )
     limiter = get_gemini_rate_limiter()
     semaphore = asyncio.Semaphore(_MAX_CONCURRENCY)
 

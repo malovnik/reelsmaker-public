@@ -122,6 +122,21 @@ def _pro_model_for_messaging(cfg: Settings, provider: str | None) -> str:
         return "pro model"
 
 
+def _viral_model_for_messaging(cfg: Settings, provider: str | None) -> str:
+    """Возвращает фактическую flash_lite-модель, используемую viral_2026.
+
+    viral_arc_builder резолвит ``build_llm_for_tier("flash_lite", ...)`` —
+    артефакт/SSE должны отражать ту же модель и провайдера, а не хардкод.
+    Ошибка резолва → ``"flash_lite model"`` (graceful-degrade).
+    """
+    try:
+        return build_llm_for_tier(
+            "flash_lite", cfg, provider_override=provider
+        ).model
+    except Exception:
+        return "flash_lite model"
+
+
 async def run_analysis_stage(ctx: PipelineContext) -> PipelineContext:
     """Analysis phase — Kartoziya 5.1-5.10.
 
@@ -268,6 +283,7 @@ async def run_analysis_stage(ctx: PipelineContext) -> PipelineContext:
             canvas=canvas,
             cleaned_transcript=cleaned_transcript,
             vision_runtime=vision_runtime,
+            pipeline_provider=pipeline_provider,
             llm_provider=llm_provider,
             llm_model=llm_model,
             vision_profile=vision_profile,
@@ -836,6 +852,7 @@ async def _run_viral_2026_branch(
     canvas: ProjectCanvas,
     cleaned_transcript: TranscriptResult,
     vision_runtime: VisionRuntimeSettings,
+    pipeline_provider: str | None,
     llm_provider: str,
     llm_model: str,
     vision_profile: VisionProfile,
@@ -859,17 +876,24 @@ async def _run_viral_2026_branch(
     art = ctx.artifacts
     cfg = ctx.settings
 
+    # Резолвим фактического провайдера/модель ОДИН раз — артефакт должен
+    # отражать реальный рантайм, а не хардкод gemini (см. bottom-up).
+    resolved_provider = pipeline_provider or "gemini"
+    resolved_model = _viral_model_for_messaging(cfg, pipeline_provider)
+
     await _advance(
         service, job_id, JobStage.analyze, 40,
-        "viral 2026: chunked LLM build (Flash Lite)",
+        f"viral 2026: chunked LLM build ({resolved_provider})",
     )
 
-    reels = await build_viral_arcs(cleaned_transcript, cfg=cfg)
+    reels = await build_viral_arcs(
+        cleaned_transcript, cfg=cfg, pipeline_provider=pipeline_provider
+    )
 
     analysis = AnalysisResult(
         reels=reels,
-        llm_model="gemini-flash-lite",
-        provider="gemini",
+        llm_model=resolved_model,
+        provider=resolved_provider,
         stats={
             "narrative_mode": "viral_2026",
             "reel_count": len(reels),

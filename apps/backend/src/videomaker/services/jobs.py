@@ -382,6 +382,33 @@ class JobService:
             },
         )
 
+    async def mark_cancelled(
+        self, job_id: str, *, message: str | None = None
+    ) -> None:
+        timings = await self._finalize_timings(job_id)
+        async with self._lock:
+            self._pending.pop(job_id, None)
+            self._last_flush.pop(job_id, None)
+        async with session_scope() as session:
+            job = await session.get(Job, job_id)
+            if job is None:
+                raise ValueError(f"job {job_id} not found")
+            job.status = JobStatus.cancelled
+            job.message = message
+            job.finished_at = utc_now()
+            _store_timings(job, timings)
+        log.info("job_cancelled", job_id=job_id)
+        await self.bus.publish(
+            job_id,
+            {
+                "stage": "cancelled",
+                "message": message,
+                "status": JobStatus.cancelled.value,
+                "stage_durations": timings["stage_durations"],
+                "total_generation_sec": timings["total_generation_sec"],
+            },
+        )
+
     async def _maybe_flush(self, job_id: str) -> None:
         now = time.monotonic()
         async with self._lock:

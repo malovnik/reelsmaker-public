@@ -25,14 +25,20 @@ _engine: AsyncEngine | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
 
 
-def _enable_sqlite_foreign_keys(dbapi_connection, connection_record) -> None:
-    """Включаем PRAGMA foreign_keys для каждого нового SQLite-соединения.
+def _configure_sqlite_connection(dbapi_connection, connection_record) -> None:
+    """PRAGMA-настройка каждого нового SQLite-соединения.
 
-    Без этого ``ON DELETE CASCADE`` в FK-декларациях игнорируется SQLite.
+    * ``foreign_keys=ON`` — иначе ``ON DELETE CASCADE`` игнорируется SQLite.
+    * ``journal_mode=WAL`` — конкурентные читатели не блокируют писателя
+      (параллельные ffmpeg-рендеры / джобы).
+    * ``busy_timeout=30000`` — ждать до 30 с при заблокированной БД вместо
+      мгновенного ``database is locked``.
     """
     cursor = dbapi_connection.cursor()
     try:
         cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=30000")
     finally:
         cursor.close()
 
@@ -52,7 +58,7 @@ def get_engine() -> AsyncEngine:
             event.listen(
                 _engine.sync_engine,
                 "connect",
-                _enable_sqlite_foreign_keys,
+                _configure_sqlite_connection,
             )
     return _engine
 

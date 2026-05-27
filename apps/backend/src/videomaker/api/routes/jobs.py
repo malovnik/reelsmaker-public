@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import shutil
 from collections.abc import AsyncIterator, Mapping
 from pathlib import Path
@@ -1089,6 +1090,35 @@ async def delete_job(
     return summary
 
 
+@router.post("/{job_id}/cancel", status_code=status.HTTP_200_OK)
+async def cancel_job(
+    job_id: str,
+    service: JobService = Depends(get_job_service),
+) -> dict[str, Any]:
+    """Отменяет выполняющийся job: отменяет asyncio-task pipeline и ставит
+    статус ``cancelled``.
+
+    Если pipeline уже завершён (done/error/cancelled) — возвращает текущий
+    статус без изменений. Если задача ещё выполняется — посылает
+    ``Task.cancel()`` (внутри pipeline это пробрасывается как CancelledError
+    и НЕ превращается в error) и помечает job cancelled.
+    """
+    job = await service.get(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"job {job_id} not found",
+        )
+    if job.status in (JobStatus.done, JobStatus.error, JobStatus.cancelled):
+        return {"job_id": job_id, "status": job.status.value, "cancelled": False}
+
+    task = _find_pipeline_task(job_id)
+    if task is not None and not task.done():
+        task.cancel()
+    await service.mark_cancelled(job_id, message="отменено пользователем")
+    return {"job_id": job_id, "status": JobStatus.cancelled.value, "cancelled": True}
+
+
 @router.post(
     "/{job_id}/saved",
     response_model=SavedReelsResponse,
@@ -1249,6 +1279,40 @@ async def stream_job_progress(
     )
 
 
+_REEL_ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+_REEL_ID_MAX_LEN = 128
+
+
+def _validate_reel_id(reel_id: str) -> str:
+    """Валидирует reel_id перед интерполяцией в файловый путь (anti-traversal).
+
+    Реальный формат в проде — ``v{idx}_r{N}``. Разрешаем только
+    ``[A-Za-z0-9_-]`` и разумную длину; всё прочее → 400.
+    """
+    if not reel_id or len(reel_id) > _REEL_ID_MAX_LEN or not _REEL_ID_RE.fullmatch(reel_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"invalid reel_id: {reel_id!r}",
+        )
+    return reel_id
+
+
+def _reel_artifact_path(base_dir: Path, reel_id: str, suffix: str) -> Path:
+    """Строит путь к артефакту рилса c containment-check внутри base_dir.
+
+    base_dir — поддиректория job_dir (subs/reels). Дополнительная проверка
+    resolved-пути защищает от обхода даже если валидатор reel_id обойдён.
+    """
+    candidate = (base_dir / f"{reel_id}{suffix}").resolve()
+    base_resolved = base_dir.resolve()
+    if base_resolved not in candidate.parents:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="resolved path escapes job dir",
+        )
+    return candidate
+
+
 class SubtitleUpdateRequest(BaseModel):
     ass_content: str = Field(..., description="Raw ASS/SSA content для перезаписи")
 
@@ -1260,7 +1324,8 @@ async def get_reel_subtitles(
     artifacts: ArtifactsManager = Depends(get_artifacts_manager),
 ) -> Response:
     """Возвращает raw .ass содержимое субтитров рилса (T3.4 captions editor)."""
-    sub_path = artifacts.job_dir(job_id) / "subs" / f"{reel_id}.ass"
+    _validate_reel_id(reel_id)
+    sub_path = _reel_artifact_path(artifacts.job_dir(job_id) / "subs", reel_id, ".ass")
     if not sub_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1283,13 +1348,14 @@ async def update_reel_subtitles(
     artifacts: ArtifactsManager = Depends(get_artifacts_manager),
 ) -> Response:
     """Перезаписывает .ass файл рилса (T3.4 inline editor)."""
+    _validate_reel_id(reel_id)
     subs_dir = artifacts.job_dir(job_id) / "subs"
     if not subs_dir.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"no subs dir for job {job_id}",
         )
-    sub_path = subs_dir / f"{reel_id}.ass"
+    sub_path = _reel_artifact_path(subs_dir, reel_id, ".ass")
     if not sub_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1332,7 +1398,8 @@ async def export_reel_with_preset(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"unknown preset: {preset}",
         )
-    reel_path = artifacts.job_dir(job_id) / "reels" / f"{reel_id}.mp4"
+    _validate_reel_id(reel_id)
+    reel_path = _reel_artifact_path(artifacts.job_dir(job_id) / "reels", reel_id, ".mp4")
     if not reel_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -1363,6 +1430,15 @@ def _safe_filename(name: str) -> str:
 
 
 _pipeline_tasks: set[asyncio.Task[None]] = set()
+
+
+def _find_pipeline_task(job_id: str) -> asyncio.Task[None] | None:
+    """Находит запущенную pipeline-задачу по job_id (имя ``pipeline:{job_id}``)."""
+    target = f"pipeline:{job_id}"
+    for task in _pipeline_tasks:
+        if task.get_name() == target:
+            return task
+    return None
 
 
 def _schedule_pipeline(

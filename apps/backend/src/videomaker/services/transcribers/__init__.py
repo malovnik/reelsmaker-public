@@ -12,11 +12,13 @@ from videomaker.services.transcribers.base import (
 )
 from videomaker.services.transcribers.deepgram_backend import DeepgramBackend
 from videomaker.services.transcribers.factory import build_transcriber
-from videomaker.services.transcribers.mlx_whisper_backend import MlxWhisperBackend
+
+# MlxWhisperBackend/StableTsMlxBackend НЕ импортируются здесь жадно: MLX-пакеты
+# доступны только на macOS. Их подтягивает build_transcriber() лениво при выборе
+# MLX-бэкенда (только на Apple Silicon). На Win/Linux импорт пакета не нужен.
 
 __all__ = [
     "DeepgramBackend",
-    "MlxWhisperBackend",
     "TranscribedSegment",
     "TranscribedWord",
     "Transcriber",

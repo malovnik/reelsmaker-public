@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -22,17 +23,30 @@ from videomaker.services.transcribers.cache import (
     compute_video_sha256,
 )
 from videomaker.services.transcribers.deepgram_backend import DeepgramBackend
-from videomaker.services.transcribers.mlx_whisper_backend import MlxWhisperBackend
-from videomaker.services.transcribers.stable_ts_mlx_backend import StableTsMlxBackend
 
 log = get_logger(__name__)
 
 
 def build_transcriber(name: str, settings: Settings | None = None) -> Transcriber:
     cfg = settings or get_settings()
-    if name in ("stable_ts_mlx", "stable_ts"):
-        return StableTsMlxBackend(model=cfg.mlx_whisper_model)
-    if name == "mlx_whisper":
+    if name in ("stable_ts_mlx", "stable_ts", "mlx_whisper"):
+        # MLX доступен только на macOS/Apple Silicon. Ленивый импорт: на
+        # Windows/Linux пакет не установлен, поэтому не тянем его на уровне модуля.
+        if sys.platform != "darwin":
+            raise TranscriberError(
+                f"transcriber {name!r} (MLX) доступен только на macOS/Apple Silicon. "
+                "На Windows/Linux используйте 'deepgram' (нужен DEEPGRAM_API_KEY)."
+            )
+        if name in ("stable_ts_mlx", "stable_ts"):
+            from videomaker.services.transcribers.stable_ts_mlx_backend import (
+                StableTsMlxBackend,
+            )
+
+            return StableTsMlxBackend(model=cfg.mlx_whisper_model)
+        from videomaker.services.transcribers.mlx_whisper_backend import (
+            MlxWhisperBackend,
+        )
+
         return MlxWhisperBackend(model=cfg.mlx_whisper_model)
     if name == "deepgram":
         if not cfg.deepgram_api_key:

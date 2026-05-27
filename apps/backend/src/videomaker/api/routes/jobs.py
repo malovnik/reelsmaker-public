@@ -30,7 +30,7 @@ from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from videomaker.core.artifacts import ArtifactsManager
-from videomaker.core.config import Settings, get_settings
+from videomaker.core.config import DEFAULT_TRANSCRIBER, Settings, get_settings
 from videomaker.core.logging import get_logger
 from videomaker.models.job import (
     ArtifactLikeUpdate,
@@ -92,7 +92,7 @@ SUPPORTED_SOURCE_LANGS = frozenset(
 @router.post("", response_model=JobRead, status_code=status.HTTP_201_CREATED)
 async def create_job(
     file: UploadFile = File(..., description="Исходное видео"),
-    transcriber: str = Form(default="stable_ts_mlx"),
+    transcriber: str = Form(default=DEFAULT_TRANSCRIBER),
     llm_provider: str = Form(default="gemini"),
     llm_model: str = Form(default="gemini-3.1-flash-lite-preview"),
     target_aspect: str = Form(default="9:16"),

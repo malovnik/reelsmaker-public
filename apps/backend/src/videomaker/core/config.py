@@ -2,12 +2,18 @@
 
 from __future__ import annotations
 
+import sys
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# MLX (локальный STT) доступен только на macOS / Apple Silicon.
+# На Windows/Linux транскрипция идёт через Deepgram (cloud).
+IS_MACOS = sys.platform == "darwin"
+DEFAULT_TRANSCRIBER = "stable_ts_mlx" if IS_MACOS else "deepgram"
 
 REPO_ROOT = Path(__file__).resolve().parents[5]
 DEFAULT_ENV_FILE = REPO_ROOT / ".env"
@@ -265,12 +271,19 @@ class Settings(BaseSettings):
 
     @property
     def available_transcribers(self) -> list[str]:
-        # TIER1-#7: stable_ts_mlx — default (±20-30ms word timestamps).
-        # mlx_whisper остаётся как fallback для cache hit совместимости.
-        return (
-            ["stable_ts_mlx", "mlx_whisper"]
-            + (["deepgram"] if self.deepgram_api_key else [])
-        )
+        # MLX-бэкенды (stable_ts_mlx default ±20-30ms, mlx_whisper fallback) —
+        # только на macOS/Apple Silicon. На Windows/Linux MLX не установлен →
+        # доступен только Deepgram (cloud, нужен DEEPGRAM_API_KEY).
+        mlx = ["stable_ts_mlx", "mlx_whisper"] if IS_MACOS else []
+        cloud = ["deepgram"] if self.deepgram_api_key else []
+        return mlx + cloud
+
+    @property
+    def default_transcriber(self) -> str:
+        # macOS → локальный MLX; Win/Linux → Deepgram (если ключ есть).
+        if IS_MACOS:
+            return "stable_ts_mlx"
+        return "deepgram"
 
     def ensure_directories(self) -> None:
         for directory in (

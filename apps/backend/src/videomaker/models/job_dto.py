@@ -22,6 +22,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from videomaker.core.config import DEFAULT_TRANSCRIBER
 from videomaker.models.job_constants import (
     ArtifactKind,
     JobStage,
@@ -33,7 +34,8 @@ from videomaker.models.job_orm import SubtitleStylePresetRow
 
 
 class JobCreate(BaseModel):
-    transcriber: str = Field(default="stable_ts_mlx")
+    # macOS → stable_ts_mlx (локальный), Win/Linux → deepgram (cloud).
+    transcriber: str = Field(default=DEFAULT_TRANSCRIBER)
     llm_provider: str = Field(default="gemini")
     llm_model: str = Field(default="gemini-3.1-flash-lite-preview")
     target_aspect: str = Field(default="9:16")

@@ -24,8 +24,10 @@ dependencies = [
     "pyyaml>=6.0",
     "tiktoken>=0.8",
     "structlog>=24.4",
-    "mlx-whisper>=0.4.2",
-    "stable-ts[mlx]>=2.19",
+    # MLX — фреймворк Apple Silicon, колёс под Windows/Linux нет.
+    # Гейтим под macOS, иначе uv sync падает на не-Mac. На Win/Linux STT = Deepgram (cloud).
+    "mlx-whisper>=0.4.2; sys_platform == 'darwin'",
+    "stable-ts[mlx]>=2.19; sys_platform == 'darwin'",
     "silero-vad>=5.1",
     "onnxruntime>=1.19",
     "deepgram-sdk>=3.8",

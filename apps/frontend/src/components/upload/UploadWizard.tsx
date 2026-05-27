@@ -61,6 +61,14 @@ const FIT_MODE_LABEL: Record<FitMode, string> = {
   fit: "Сохранить весь кадр (чёрные поля)",
 };
 
+const PROFILE_LABEL: Record<string, string> = {
+  talking_head: "Говорящая голова",
+  fashion: "Фэшн и стиль",
+  travel: "Путешествия",
+  screencast: "Скринкаст",
+  custom: "Своя настройка",
+};
+
 function isAcceptedFile(file: File): boolean {
   if (file.type.startsWith("video/")) return true;
   const lower = file.name.toLowerCase();
@@ -152,6 +160,29 @@ export function UploadWizard({
           masks={profileMasks}
         />
       </Step>
+
+      {state.projects.length > 0 && (
+        <Field label="Проект (папка)">
+          <select
+            value={state.projectId ?? ""}
+            onChange={(e) => {
+              const raw = e.target.value;
+              actions.setProjectId(raw === "" ? null : Number(raw));
+            }}
+            className="w-full rounded-lg border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--accent-primary)]"
+          >
+            <option value="">— без проекта —</option>
+            {state.projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <span className="text-[11px] text-[color:var(--text-muted)]">
+            Готовый джоб попадёт в выбранную папку проекта.
+          </span>
+        </Field>
+      )}
 
       <Step index={2} title="Видео">
         <input
@@ -598,10 +629,12 @@ export function UploadWizard({
               <Select
                 value={state.provider}
                 onChange={actions.setProvider}
-                options={models.available_providers.map((p) => ({
-                  value: p,
-                  label: p,
-                }))}
+                options={models.available_providers
+                  .filter((p) => p === "gemini" || p === "zhipu")
+                  .map((p) => ({
+                    value: p,
+                    label: p,
+                  }))}
               />
             </Field>
             <Field label="Режим нейросети">
@@ -772,6 +805,43 @@ export function UploadWizard({
           "Запустить нарезку"
         )}
       </button>
+
+      {state.profileSuggestion &&
+        state.profileSuggestion.profile !== state.visionProfile && (
+          <div className="flex flex-col gap-2 rounded-lg border border-[color:var(--accent-primary)]/30 bg-[color:var(--accent-primary-subtle)] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-[color:var(--text-primary)]">
+                Рекомендуем профиль:{" "}
+                {PROFILE_LABEL[state.profileSuggestion.profile] ??
+                  state.profileSuggestion.profile}
+              </span>
+              <span className="font-mono text-[11px] text-[color:var(--text-muted)]">
+                уверенность{" "}
+                {Math.round(state.profileSuggestion.confidence * 100)}%
+              </span>
+            </div>
+            {state.profileSuggestion.reasons.length > 0 && (
+              <ul className="list-disc pl-5 text-[12px] leading-relaxed text-[color:var(--text-secondary)]">
+                {state.profileSuggestion.reasons.map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+            )}
+            {state.profileSuggestionApplied ? (
+              <span className="text-[12px] font-medium text-[color:var(--success)]">
+                Профиль применён к этому джобу.
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={actions.applyProfileSuggestion}
+                className="self-start rounded-lg bg-[color:var(--accent-primary)] px-4 py-2 text-xs font-semibold text-[color:var(--accent-on-primary)] transition-colors hover:bg-[color:var(--accent-primary-hover)]"
+              >
+                Применить рекомендованный профиль
+              </button>
+            )}
+          </div>
+        )}
 
       {state.autoAnalysis && (
         <AutoConfigSummary

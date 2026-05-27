@@ -7,7 +7,7 @@ import {
   viralInputFromMeta,
   type ViralScoreBreakdown,
 } from "@/lib/viralScore";
-import { ScheduleButton } from "@/components/job/ScheduleButton";
+import { ManualPublishButton } from "@/components/scheduler/ManualPublishButton";
 
 export type LikeState = "none" | "like" | "dislike";
 
@@ -142,7 +142,11 @@ export function ReelCard({
             Скачать
           </a>
           <div className="flex items-center gap-2">
-            <ScheduleButton jobId={jobId} reelId={reelId} />
+            <ManualPublishButton
+              artifactId={artifact.id}
+              jobId={jobId}
+              label="Опубликовать"
+            />
             <Link
               to={`/jobs/${jobId}/reels/${artifact.id}`}
               className="text-[11px] text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--text-primary)]"
@@ -154,6 +158,9 @@ export function ReelCard({
 
         {showBreakdown && (
           <div className="mt-1 flex flex-col gap-1.5 rounded-lg bg-[color:var(--surface-sunken)] p-3">
+            <p className="mb-1 text-[10px] leading-snug text-[color:var(--text-muted)]">
+              Клиентская эвристика по длине и ритму, не оценка движка нарезки.
+            </p>
             {breakdown.parts.map((p) => (
               <div
                 key={p.label}
@@ -410,7 +417,7 @@ function ScoreBadge({
       onClick={onToggle}
       aria-expanded={showBreakdown}
       className="absolute right-3 top-3 flex items-baseline gap-1 rounded-xl border border-white/15 bg-black/60 px-2.5 py-1.5 text-white shadow-lg backdrop-blur-md transition-transform hover:scale-105"
-      title={`Оценка ${breakdown.score} из 100 — нажми для деталей`}
+      title={`Клиентская эвристика ${breakdown.score}/100 (длина + ритм, не оценка движка) — нажми для деталей`}
     >
       <span
         className="display-serif text-2xl leading-none tracking-tight"

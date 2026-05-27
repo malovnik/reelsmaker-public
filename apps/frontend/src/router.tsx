@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense } from "react";
 
 import RootLayout from "@/pages/RootLayout";
 import SettingsLayout from "@/pages/SettingsLayout";
@@ -9,7 +10,10 @@ import JobDetailPage, { loader as jobLoader } from "@/pages/JobDetailPage";
 import ClipDetailPage, { loader as clipLoader } from "@/pages/ClipDetailPage";
 import JobTinderPage, { loader as tinderLoader } from "@/pages/JobTinderPage";
 import ProjectsPage, { loader as projectsLoader } from "@/pages/ProjectsPage";
-import SchedulePage from "@/pages/SchedulePage";
+// FE-2 создаёт pages/ProjectFolderPage.tsx параллельно — lazy-импорт по
+// ожидаемому пути (экран папки saved/<folder> проекта, R2.2).
+const ProjectFolderPage = lazy(() => import("@/pages/ProjectFolderPage"));
+import MaintenancePage from "@/pages/MaintenancePage";
 import SchedulerPage, {
   loader as schedulerLoader,
 } from "@/pages/SchedulerPage";
@@ -22,7 +26,6 @@ import CampaignDetailPage, {
   loader as campaignDetailLoader,
 } from "@/pages/CampaignDetailPage";
 import BrandKitPage from "@/pages/BrandKitPage";
-import ConnectionsPage from "@/pages/ConnectionsPage";
 import ModelsPage, { loader as modelsLoader } from "@/pages/ModelsPage";
 import PerformanceSettingsPage, {
   loader as performanceLoader,
@@ -46,6 +49,14 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage />, loader: homeLoader },
 
       { path: "projects", element: <ProjectsPage />, loader: projectsLoader },
+      {
+        path: "projects/:id/folder",
+        element: (
+          <Suspense fallback={<div className="p-8 text-sm">Загрузка…</div>}>
+            <ProjectFolderPage />
+          </Suspense>
+        ),
+      },
 
       {
         path: "jobs/:id",
@@ -62,8 +73,6 @@ export const router = createBrowserRouter([
         element: <JobTinderPage />,
         loader: tinderLoader,
       },
-
-      { path: "schedule", element: <SchedulePage /> },
 
       {
         path: "scheduler",
@@ -96,7 +105,7 @@ export const router = createBrowserRouter([
         element: <SettingsLayout />,
         children: [
           { path: "brand", element: <BrandKitPage /> },
-          { path: "connections", element: <ConnectionsPage /> },
+          { path: "maintenance", element: <MaintenancePage /> },
           {
             path: "models",
             element: <ModelsPage />,

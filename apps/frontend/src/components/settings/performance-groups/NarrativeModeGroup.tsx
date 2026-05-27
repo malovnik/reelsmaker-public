@@ -2,7 +2,7 @@
 import { Group, NumberRow } from "@/components/settings-shared";
 import type { GroupProps } from "./types";
 
-type NarrativeMode = "bottom_up" | "chaptered" | "map_reduce" | "viral_2026";
+type NarrativeMode = "bottom_up" | "map_reduce" | "viral_2026";
 
 const NARRATIVE_MODE_META: Record<
   NarrativeMode,
@@ -11,10 +11,6 @@ const NARRATIVE_MODE_META: Record<
   bottom_up: {
     label: "Bottom-up (legacy)",
     hint: "Классический 9-стадийный pipeline: 6 extraction-агентов → reducer → story_doctor → composer с padding до MIN. Стабильный, дорогой, узкое распределение длин рилсов.",
-  },
-  chaptered: {
-    label: "Chaptered (Phase 1-6, broken на монологах)",
-    hint: "Embedding-based chaptering + per-chapter arc_finder. Работает на диалогах и интервью, но на монологах/лекциях возвращает 1 chapter вместо 10-30. Оставлен для отката.",
   },
   map_reduce: {
     label: "Map-Reduce (Phase 8, OpusClip-parity)",
@@ -27,7 +23,10 @@ const NARRATIVE_MODE_META: Record<
 };
 
 export function NarrativeModeGroup({ values, update }: GroupProps) {
-  const current = (values.narrative_mode ?? "bottom_up") as NarrativeMode;
+  // `chaptered` снят с поддержки (нет рабочего call-site) — стейт из старой БД
+  // коерсим к bottom_up, чтобы радиогруппа не оставалась без выбора.
+  const raw = values.narrative_mode ?? "bottom_up";
+  const current = (raw === "chaptered" ? "bottom_up" : raw) as NarrativeMode;
 
   return (
     <Group title="Архитектура сборки рилсов">

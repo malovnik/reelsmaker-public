@@ -160,11 +160,12 @@ export function MoondreamSettings({ initial }: Props) {
           />
           <span className="flex flex-col gap-0.5">
             <span className="text-sm text-[color:var(--text-primary)]">
-              Включить анализ кадров
+              Включить анализ кадров · экспериментально, opt-in
             </span>
             <span className="text-xs text-[color:var(--text-muted)]">
               Умный монтаж замечает композицию лиц, выбирает обложку рилса
-              и учитывает визуальные эффекты при нарезке.
+              и учитывает визуальные эффекты при нарезке. По умолчанию выключено:
+              заметно удлиняет обработку, включай осознанно.
             </span>
           </span>
         </label>

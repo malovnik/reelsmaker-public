@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import type { AutoAnalyzeResponse } from "@/lib/api";
+import { api, type AutoAnalyzeResponse } from "@/lib/api";
 
 /**
  * T11.4 — AutoConfigSummary card.
@@ -8,17 +8,44 @@ import type { AutoAnalyzeResponse } from "@/lib/api";
  * Показывает пользователю решения которые Automatic Mode принял для его
  * видео. Confidence + evidence chain + warnings. Кнопка «Запустить»
  * применяет config, «Детали» раскрывает полный evidence log.
+ *
+ * R4.1 — если передан `jobId`, доступна кнопка «Сбросить авто-настройки»
+ * (DELETE /jobs/{id}/auto-config) для возврата джоба в ручной режим.
  */
 export function AutoConfigSummary({
   data,
+  jobId,
   onAccept,
   onSwitchToManual,
+  onCleared,
 }: {
   data: AutoAnalyzeResponse;
+  jobId?: string;
   onAccept: () => void;
   onSwitchToManual: () => void;
+  onCleared?: () => void;
 }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
+
+  async function handleClear() {
+    if (!jobId || clearing) {
+      onSwitchToManual();
+      return;
+    }
+    setClearing(true);
+    setClearError(null);
+    try {
+      await api.clearAutoConfig(jobId);
+      onCleared?.();
+      onSwitchToManual();
+    } catch (err) {
+      setClearError(`Не удалось сбросить: ${String(err)}`);
+    } finally {
+      setClearing(false);
+    }
+  }
 
   const confidencePct = Math.round(data.meta_confidence * 100);
   const confidenceClass =
@@ -180,12 +207,20 @@ export function AutoConfigSummary({
         </button>
         <button
           type="button"
-          onClick={onSwitchToManual}
-          className="px-4 py-2.5 text-sm text-stone-600 hover:text-stone-900 border border-[color:var(--line-soft)] rounded-lg transition-colors"
+          onClick={handleClear}
+          disabled={clearing}
+          className="px-4 py-2.5 text-sm text-stone-600 hover:text-stone-900 border border-[color:var(--line-soft)] rounded-lg transition-colors disabled:opacity-50"
         >
-          Настроить вручную
+          {clearing
+            ? "Сбрасываем…"
+            : jobId
+              ? "Сбросить · настроить вручную"
+              : "Настроить вручную"}
         </button>
       </div>
+      {clearError && (
+        <p className="text-xs text-rose-700">{clearError}</p>
+      )}
     </div>
   );
 }

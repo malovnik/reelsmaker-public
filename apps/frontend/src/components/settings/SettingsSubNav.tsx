@@ -53,10 +53,10 @@ const ITEMS: Item[] = [
     hint: "Системные инструкции для этапов анализа",
   },
   {
-    href: "/settings/connections",
-    code: "CNX",
-    label: "Аккаунты",
-    hint: "Подключение YouTube и Instagram для публикаций",
+    href: "/settings/maintenance",
+    code: "MNT",
+    label: "Обслуживание",
+    hint: "Кэш proxy-файлов и шрифтов · эксперт-режим",
   },
 ];
 

@@ -52,8 +52,6 @@ export default function ModelsPage() {
             title="Языковые модели"
             items={{
               gemini: info.defaults.gemini,
-              anthropic: info.defaults.anthropic,
-              openai: info.defaults.openai,
               zhipu: info.defaults.zhipu,
             }}
             active={info.available_providers}
@@ -61,6 +59,7 @@ export default function ModelsPage() {
           <Block
             title="Распознавание речи"
             items={{
+              stable_ts_mlx: info.defaults.stable_ts_mlx,
               mlx_whisper: info.defaults.mlx_whisper,
               deepgram: info.defaults.deepgram,
             }}

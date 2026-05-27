@@ -20,6 +20,7 @@ export * from "./post_production";
 export * from "./settings";
 export * from "./projects";
 export * from "./scheduler";
+export * from "./proxies";
 
 import { coreApi } from "./core";
 import { jobsApi } from "./jobs";
@@ -28,6 +29,7 @@ import { postProductionApi } from "./post_production";
 import { settingsApi } from "./settings";
 import { projectsApi } from "./projects";
 import { schedulerApi } from "./scheduler";
+import { proxiesApi } from "./proxies";
 
 export const api = {
   ...coreApi,
@@ -37,4 +39,5 @@ export const api = {
   ...settingsApi,
   ...projectsApi,
   ...schedulerApi,
+  ...proxiesApi,
 } as const;

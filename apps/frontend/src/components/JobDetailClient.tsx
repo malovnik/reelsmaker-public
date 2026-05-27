@@ -17,8 +17,27 @@ interface Props {
 export function JobDetailClient({ initialJob, initialArtifacts }: Props) {
   const [job, setJob] = useState<JobRead>(initialJob);
   const [artifacts, setArtifacts] = useState<ArtifactRead[]>(initialArtifacts);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const isActive = job.status === "running" || job.status === "pending";
   const sse = useJobSse(isActive ? job.id : null);
+
+  async function handleCancel() {
+    if (cancelling) return;
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      const res = await api.cancelJob(job.id);
+      setJob((prev) => ({
+        ...prev,
+        status: res.status as JobRead["status"],
+      }));
+    } catch (err) {
+      setCancelError(`Не удалось отменить: ${String(err)}`);
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   useEffect(() => {
     if (sse.finalStatus === "done" || sse.finalStatus === "error") {
@@ -102,6 +121,23 @@ export function JobDetailClient({ initialJob, initialArtifacts }: Props) {
             message={currentMessage}
             stageDurations={job.stage_durations}
           />
+          {isActive && (
+            <div className="mt-4 border-t border-[color:var(--line-soft)] pt-4">
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[color:var(--danger,#b91c1c)] px-3 py-2 text-xs font-semibold text-[color:var(--danger,#b91c1c)] transition-colors hover:bg-[color:var(--danger,#b91c1c)]/10 disabled:opacity-50"
+              >
+                {cancelling ? "Отменяем…" : "Отменить обработку"}
+              </button>
+              {cancelError && (
+                <p className="mt-2 text-xs text-[color:var(--danger,#b91c1c)]">
+                  {cancelError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-5">

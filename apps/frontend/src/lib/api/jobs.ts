@@ -158,6 +158,36 @@ export interface AutoAnalyzeResponse {
   audio_features: Record<string, number | string | string[]>;
 }
 
+/**
+ * R4.1 — subset полей AutoAnalyzeResponse, отправляемый в PATCH /auto-config.
+ * Контракт совпадает с backend AutoConfigApplyPayload (jobs.py:774).
+ */
+export interface AutoConfigPayload {
+  pacing_profile?: string;
+  snap_strategy?: string;
+  pause_compression_enabled?: boolean;
+  pause_compression_threshold_sec?: number;
+  pause_compression_keep_sec?: number;
+  breath_compression_enabled?: boolean;
+  filler_words_removal_enabled?: boolean;
+  punchline_pause_enabled?: boolean;
+  punchline_hold_after_sec?: number;
+  punch_in_zoom_enabled?: boolean;
+  punch_in_zoom_scale?: number;
+  punch_in_zoom_probability?: number;
+  ken_burns_drift_enabled?: boolean;
+  ken_burns_scale_per_sec?: number;
+  coherence_threshold?: number;
+  rhythm_aware_cuts_enabled?: boolean;
+  onset_snap_max_shift_sec?: number;
+}
+
+export interface AutoConfigApplyResponse {
+  job_id: string;
+  pipeline_mode: string;
+  applied_keys: string[];
+}
+
 export const jobsApi = {
   listJobs: (limit = 50) =>
     request<JobRead[]>(`/api/v1/jobs?limit=${limit}`),
@@ -183,6 +213,30 @@ export const jobsApi = {
       method: "POST",
     }),
   jobThumbnailUrl: (id: string) => `/api/v1/jobs/${id}/thumbnail`,
+  // R8.3 — URL-хелперы превью (source-кадр джоба + кадр post-production ассета).
+  sourceThumbnailUrl: (id: string) => `/api/v1/jobs/${id}/source-thumbnail`,
+  assetThumbnailUrl: (assetId: number) =>
+    `/api/v1/post_production/assets/${assetId}/thumbnail`,
+  // R3.1 — отмена активного джоба. Бэк помечает статус cancelled и
+  // отменяет фоновую задачу; SSE терминирует на cancelled.
+  cancelJob: (id: string) =>
+    request<{ job_id: string; status: string; cancelled: boolean }>(
+      `/api/v1/jobs/${id}/cancel`,
+      { method: "POST" },
+    ),
+  // R4.1 — применить AutoConfig (Automatic Mode) к джобу.
+  applyAutoConfig: (id: string, config: AutoConfigPayload) =>
+    request<AutoConfigApplyResponse>(`/api/v1/jobs/${id}/auto-config`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    }),
+  // R4.1 — сбросить AutoConfig, вернуть джоб в ручной режим.
+  clearAutoConfig: (id: string) =>
+    request<{ job_id: string; pipeline_mode: string }>(
+      `/api/v1/jobs/${id}/auto-config`,
+      { method: "DELETE" },
+    ),
   listArtifacts: (id: string) =>
     request<ArtifactRead[]>(`/api/v1/jobs/${id}/artifacts`),
   updateArtifactLike: (

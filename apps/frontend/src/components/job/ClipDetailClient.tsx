@@ -220,7 +220,11 @@ export function ClipDetailClient({ job, reel: initialReel, siblings }: Props) {
 function ScoreBlock({ breakdown }: { breakdown: ViralScoreBreakdown }) {
   return (
     <div className="surface-card p-5">
-      <div className="divider mb-4">оценка Reelibra</div>
+      <div className="divider mb-4">эвристика длины и ритма</div>
+      <p className="mb-4 text-[11px] leading-relaxed text-[color:var(--mute-2)]">
+        Прикидка на клиенте по длительности и ритму рилса (best-practice
+        Instagram Reels). Это не оценка движка нарезки — ориентир, а не вердикт.
+      </p>
       <div className="flex items-start gap-6">
         <div
           className="score-ring"

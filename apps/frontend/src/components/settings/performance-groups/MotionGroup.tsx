@@ -89,8 +89,8 @@ export function MotionGroup({ values, update, onReset }: Props) {
       )}
       <SwitchRow
         id="face_tracker_enabled"
-        label="Face tracker (MediaPipe)"
-        hint="Включает детекцию лица для face-centered base crop. Нужно только если глобальный fit=fill и важно удержать лицо в кадре. По умолчанию OFF — letterbox / manual / split-вручную работают без этого. Внимание: MediaPipe может зависать на M-series (зафиксировано в job 8a418e9b)."
+        label="Face tracker (MediaPipe) · экспериментально, opt-in"
+        hint="Детекция лица для face-centered base crop. Нужно только если глобальный fit=fill и важно удержать лицо в кадре. По умолчанию OFF (безопасный center-crop) — letterbox / manual / split-вручную работают без этого. Экспериментальная фича: детект вынесен в отдельный процесс с hard-таймаутом, при зависании/ошибке рендер сам падает на center-crop и продолжается."
         checked={values.face_tracker_enabled ?? false}
         onChange={(v) => update("face_tracker_enabled", v)}
       />

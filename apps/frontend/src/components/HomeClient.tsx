@@ -1,5 +1,6 @@
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   api,
   type JobRead,
@@ -52,9 +53,43 @@ export function HomeClient({
     return () => clearInterval(interval);
   }, [hasActiveJobs, refreshJobs]);
 
+  // R2.5 (FL-06): когда нет активных джобов, а последняя нарезка готова —
+  // показываем явный крупный CTA к результату, а не мелкую ссылку в списке.
+  const latestDoneJob = useMemo(() => {
+    const done = jobs
+      .filter((j) => j.status === "done")
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+    return done[0] ?? null;
+  }, [jobs]);
+
   return (
     <div className="flex flex-col gap-12">
       <DashboardHero jobs={jobs} />
+
+      {!hasActiveJobs && latestDoneJob && (
+        <section className="surface-card flex flex-col items-start gap-4 border-l-4 border-[color:var(--success)] p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <span className="mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--success)]">
+              нарезка готова
+            </span>
+            <span className="display-serif text-xl text-[color:var(--text-primary)]">
+              {latestDoneJob.display_name ?? latestDoneJob.source_filename}
+            </span>
+            <span className="text-sm text-[color:var(--text-secondary)]">
+              Рилсы собраны — посмотри результат и опубликуй.
+            </span>
+          </div>
+          <Link
+            to={`/jobs/${latestDoneJob.id}`}
+            className="btn btn-primary shrink-0 px-6 py-3 text-base"
+          >
+            Смотреть рилсы
+          </Link>
+        </section>
+      )}
 
       <section className="surface-card p-6">
         <div className="divider mb-6">новая нарезка</div>

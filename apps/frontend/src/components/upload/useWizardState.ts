@@ -9,6 +9,8 @@ import {
   type ModelsInfo,
   type PostProductionOverrides,
   type PostProductionPreset,
+  type Project,
+  type ProfileSuggestion,
   type SourceLanguage,
   type SubtitleStylePreset,
   type VisionProfile,
@@ -39,6 +41,10 @@ export interface WizardState {
   pipelineMode: "auto" | "manual";
   autoAnalyzing: boolean;
   autoAnalysis: AutoAnalyzeResponse | null;
+  projects: Project[];
+  projectId: number | null;
+  profileSuggestion: ProfileSuggestion | null;
+  profileSuggestionApplied: boolean;
   composerStrategy: ComposerStrategy;
   provider: string;
   llmModel: string;
@@ -67,6 +73,8 @@ export interface WizardActions {
   clearSelectedFile: () => void;
   setError: (message: string | null) => void;
   setPipelineMode: (m: "auto" | "manual") => void;
+  setProjectId: (id: number | null) => void;
+  applyProfileSuggestion: () => Promise<void>;
   setComposerStrategy: (s: ComposerStrategy) => void;
   setProvider: (p: string) => void;
   setLlmModel: (m: string) => void;
@@ -114,10 +122,41 @@ export function useWizardState(
   const [autoAnalysis, setAutoAnalysis] = useState<AutoAnalyzeResponse | null>(
     null,
   );
+
+  // R2.1 — выбор проекта (папки) для будущего джоба. После POST /jobs шлём
+  // PATCH /jobs/{id}/project, связывая джоб с проектом.
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectId, setProjectId] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .listProjects()
+      .then((list) => {
+        if (!cancelled) setProjects(list);
+      })
+      .catch(() => {
+        // проекты не критичны для нарезки — молча пропускаем
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // R7.3 — рекомендация профиля нарезки от бэка по аудио/видео-метрикам.
+  const [profileSuggestion, setProfileSuggestion] =
+    useState<ProfileSuggestion | null>(null);
+  const [profileSuggestionApplied, setProfileSuggestionApplied] =
+    useState(false);
   const [composerStrategy, setComposerStrategy] =
     useState<ComposerStrategy>("auto");
 
-  const defaultProvider = models.available_providers[0] ?? "gemini";
+  // BR-05: только gemini/zhipu реально подключены к pipeline. Дефолт берём из
+  // живых провайдеров, отсеяв мёртвые anthropic/openai.
+  const livePipelineProviders = models.available_providers.filter(
+    (p) => p === "gemini" || p === "zhipu",
+  );
+  const defaultProvider = livePipelineProviders[0] ?? "gemini";
   const defaultModel =
     models.defaults[defaultProvider] ??
     models.defaults["gemini"] ??
@@ -275,6 +314,25 @@ export function useWizardState(
     try {
       const job = await api.createJob(form);
       setJobId(job.id);
+      // R2.1 — связываем джоб с выбранным проектом (POST /jobs не принимает
+      // project_id, поэтому отдельным PATCH /jobs/{id}/project). Не блокируем
+      // основной флоу, если назначение не удалось — джоб всё равно создан.
+      if (projectId !== null) {
+        try {
+          await api.assignJobToProject(job.id, projectId);
+        } catch (assignErr) {
+          console.error("assignJobToProject failed", assignErr);
+        }
+      }
+      // R7.3 — подтягиваем рекомендацию профиля нарезки (best-effort).
+      setProfileSuggestion(null);
+      setProfileSuggestionApplied(false);
+      api
+        .getProfileSuggestion(job.id)
+        .then((suggestion) => setProfileSuggestion(suggestion))
+        .catch(() => {
+          // suggestion не критичен — пропускаем
+        });
       // T11 Auto Mode: после создания запрашиваем /auto-analyze. Когда
       // вернётся — показываем AutoConfigSummary card (внизу wizard'а).
       // User принимает → PATCH /auto-config + pipeline запускается в
@@ -323,7 +381,19 @@ export function useWizardState(
     composerStrategy,
     customSystemPrompt,
     splitScreenOverride,
+    projectId,
   ]);
+
+  const applyProfileSuggestion = useCallback(async () => {
+    if (!jobId || !profileSuggestion) return;
+    try {
+      await api.updateJobProfile(jobId, profileSuggestion.profile);
+      setVisionProfile(profileSuggestion.profile);
+      setProfileSuggestionApplied(true);
+    } catch (err) {
+      setError(`Не удалось применить рекомендованный профиль: ${String(err)}`);
+    }
+  }, [jobId, profileSuggestion]);
 
   const acceptAutoConfig = useCallback(async () => {
     if (!jobId || !autoAnalysis) return;
@@ -373,6 +443,10 @@ export function useWizardState(
     pipelineMode,
     autoAnalyzing,
     autoAnalysis,
+    projects,
+    projectId,
+    profileSuggestion,
+    profileSuggestionApplied,
     composerStrategy,
     provider,
     llmModel,
@@ -401,6 +475,8 @@ export function useWizardState(
     clearSelectedFile,
     setError,
     setPipelineMode,
+    setProjectId,
+    applyProfileSuggestion,
     setComposerStrategy,
     setProvider: providerWithModelReset,
     setLlmModel,

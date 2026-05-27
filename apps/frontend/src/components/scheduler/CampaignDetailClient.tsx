@@ -10,6 +10,7 @@ import {
   type ScheduleAssignment,
   type ScheduleCampaign,
 } from "@/lib/api/scheduler";
+import { ApiError } from "@/lib/api/core";
 
 interface Props {
   initialCampaign: CampaignDetail;
@@ -537,7 +538,17 @@ export function CampaignDetailClient({ initialCampaign }: Props) {
           ),
         }));
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        if (err instanceof ApiError && err.status === 409) {
+          setError(
+            `Нельзя отозвать: ${err.detail ?? "пост уже опубликован или ещё не сверён с Publer"}`,
+          );
+        } else if (err instanceof ApiError && err.status === 502) {
+          setError(
+            `Publer недоступен — отмена не выполнена, попробуйте позже: ${err.detail ?? ""}`,
+          );
+        } else {
+          setError(err instanceof Error ? err.message : String(err));
+        }
       } finally {
         setCancellingId(null);
       }

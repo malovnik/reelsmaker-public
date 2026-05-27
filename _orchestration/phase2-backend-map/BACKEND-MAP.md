@@ -28,6 +28,9 @@
 - 🔴 **Фикции в UI:** tier «pro»=Flash-Lite; chaptered-режим broken но выбираем; export не перекодирует.
 - 🔴 **Orphan (~972 LOC мёртвого кода, ещё НЕ удалён):** B-roll, object_tracker, person_cluster, match_cuts, eye_trace_continuity, transition_chooser.
 
+## Обновление после Phase 6 (вывод бэка во фронт)
+Ранее «PARTIAL STUB» в section-1 БОЛЬШЕ НЕ актуальны: export реально перекодирует (ffmpeg), assignment cancel реально отзывает пост в Publer. Tier'ы разведены на реальные модели (дефолт Flash-Lite). Orphan ~972 LOC удалены (object_tracker оставлен). Face-tracking — process-isolation с kill по таймауту.
+
 ## Что уже починено (1b-fix, проверено по коду)
 path-traversal `reel_id` · реальный cancel job · viral_2026 уважает провайдера · videotoolbox→libx264 fallback · SQLite WAL+busy_timeout.
 

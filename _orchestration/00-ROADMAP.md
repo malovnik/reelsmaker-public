@@ -23,8 +23,8 @@
 | 4 | Gap: что упущено/не выведено наружу | 3 | GAP + PRD-expose.md | ✅ DONE |
 | 5 | Валидация PRD | 3 | validated+fixed | ✅ DONE |
 | 6 | Доработка вывода бэка во фронт | 3+3 | код | ✅ DONE |
-| 7 | 3 валидатора → консолидация → фикс дыр | 3 | — | ⏳ |
-| 8 | Аудит фронта: usability/design/стабильность | 5 swarm | FRONTEND-AUDIT.md | ⬜ |
+| 7 | 3 валидатора → консолидация → фикс дыр | 3 | holes fixed | ✅ DONE |
+| 8 | Аудит фронта: usability/design/стабильность | 5 swarm | FRONTEND-AUDIT.md | ⏳ |
 | 9 | Редизайн (frontend-design skill активирован) + брендбук → 2 режима (Пошаговый / Эксперт-студия) | 5 swarm | UI-REDESIGN-SPEC.md | ⬜ |
 | 10 | 3 агента (frontend skill): PRD vs бэкенд-ручки vs логика UI | 3 | UI-IMPL-PRD.md | ⬜ |
 | 11 | Оркестрация исполнения → рабочая система | N | код | ⬜ |

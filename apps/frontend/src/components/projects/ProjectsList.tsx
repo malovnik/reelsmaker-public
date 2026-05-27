@@ -1,4 +1,5 @@
 
+import { Link } from "react-router-dom";
 import type { Project } from "@/lib/api/projects";
 
 interface Props {
@@ -67,6 +68,12 @@ export function ProjectsList({ projects, onEdit, onDelete }: Props) {
             </p>
 
             <div className="mt-auto flex items-center gap-2 pt-2">
+              <Link
+                to={`/projects/${p.id}/folder`}
+                className="rounded-md border border-[color:var(--line)] px-3 py-1.5 text-[12px] text-[color:var(--paper-dim)] transition-colors hover:text-[color:var(--paper)]"
+              >
+                Открыть папку
+              </Link>
               <button
                 type="button"
                 onClick={() => onEdit(p)}

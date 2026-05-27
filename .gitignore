@@ -31,6 +31,10 @@ build/
 # Runtime state и артефакты — создаются run.sh и пайплайном
 /data/
 
+# Портативный runtime лаунчеров (uv-python/node/ffmpeg, кэш) + собранный .app
+/.reelibra-runtime/
+/reelibraMAC.app/
+
 uploads/
 outputs/
 renders/
@@ -59,6 +63,10 @@ Thumbs.db
 # Локальные IDE/агентские артефакты
 .claude/
 .serena/
+
+# Windows launcher: ярлык, генерируемый create-shortcut.ps1 (runtime-кэш
+# /.reelibra-runtime/ уже игнорируется выше — общий для всех платформ).
+/Reelibra.lnk
 
 coverage/
 *.log

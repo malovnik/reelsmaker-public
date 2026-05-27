@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Reelibra — самурайский брендбук: латунь на чёрном лаке -->
+  <rect width="1024" height="1024" fill="#0A0A0A"/>
+  <!-- тонкая пиксельная рамка-акцент -->
+  <rect x="40" y="40" width="944" height="944" fill="none" stroke="#2A2A2A" stroke-width="3"/>
+  <!-- энсо: незамкнутый круг кистью, золото Kinzoku -->
+  <path d="M 512 196
+           A 316 316 0 1 1 300 286"
+        fill="none" stroke="#C9A84C" stroke-width="46" stroke-linecap="round"/>
+  <!-- блик-искра Kogane на разрыве энсо -->
+  <circle cx="300" cy="286" r="26" fill="#E8C547"/>
+  <!-- литера R (Noto Serif JP дух — серифная, латунь) -->
+  <text x="512" y="660" font-family="Georgia, 'Times New Roman', serif" font-weight="700"
+        font-size="440" fill="#F0E6D2" text-anchor="middle">R</text>
+  <!-- подпись медью -->
+  <text x="512" y="820" font-family="Menlo, monospace" font-weight="700"
+        font-size="74" letter-spacing="14" fill="#B87333" text-anchor="middle">REELIBRA</text>
+</svg>

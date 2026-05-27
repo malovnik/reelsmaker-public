@@ -5,7 +5,7 @@ description = "Local video cutter: long video to reels/shorts via LLM-driven mul
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 authors = [
-    { name = "malovnik", email = "<redacted-email>" }
+    { name = "ReelsMaker" }
 ]
 license = { text = "Proprietary" }
 

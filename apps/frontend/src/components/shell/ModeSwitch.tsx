@@ -59,7 +59,7 @@ export function ModeSwitch() {
             aria-pressed={active}
             onClick={() => handle(seg)}
             className={[
-              "mono inline-flex min-h-9 items-center gap-1.5 px-2.5 text-[11px] uppercase tracking-[0.1em] transition-colors duration-150",
+              "mono inline-flex min-h-11 items-center gap-1.5 px-2.5 text-[11px] uppercase tracking-[0.1em] transition-colors duration-150",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--gold)]",
               active
                 ? "bg-[color:var(--gold)] text-[color:var(--ink)]"

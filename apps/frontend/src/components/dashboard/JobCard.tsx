@@ -260,7 +260,7 @@ export function JobCard({
         {isActive && (
           <div className="absolute inset-x-0 bottom-0 h-1 bg-[color:var(--surface-sunken)]">
             <div
-              className="h-full gradient-accent transition-[width] duration-500"
+              className="h-full bg-[var(--gold)] transition-[width] duration-500"
               style={{ width: `${job.progress}%` }}
             />
           </div>
@@ -443,6 +443,7 @@ function formatSize(bytes: number): string {
 
 function formatRelative(iso: string): string {
   const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
   const diff = Math.round((Date.now() - date.getTime()) / 60000);
   if (diff < 1) return "только что";
   if (diff < 60) return `${diff} мин назад`;

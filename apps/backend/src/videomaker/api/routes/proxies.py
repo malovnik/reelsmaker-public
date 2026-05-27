@@ -106,12 +106,13 @@ async def delete_proxy_for_source(
     sha256: str,
     settings: Settings = Depends(get_settings),
 ) -> None:
-    if len(sha256) < 8:
+    try:
+        deleted = delete_proxy(settings.app_proxies_dir, sha256)
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="sha256 must be at least 8 chars (full or short hash)",
-        )
-    deleted = delete_proxy(settings.app_proxies_dir, sha256)
+            detail="sha256 must be a hex string (8-64 chars, full or short hash)",
+        ) from None
     if deleted == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

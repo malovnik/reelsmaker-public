@@ -911,9 +911,9 @@ export function UploadWizard({
               {state.sse.lastEvent.progress ?? 0}%
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[color:var(--surface-sunken)]">
+          <div className="h-2 overflow-hidden bg-[color:var(--surface-sunken)]">
             <div
-              className="h-full gradient-accent transition-all duration-500"
+              className="h-full bg-[var(--gold)] transition-all duration-500"
               style={{ width: `${state.sse.lastEvent.progress ?? 0}%` }}
             />
           </div>

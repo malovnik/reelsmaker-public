@@ -26,6 +26,7 @@ import asyncio
 import errno
 import hashlib
 import os
+import re
 import shutil
 import time
 from dataclasses import dataclass, field
@@ -396,8 +397,16 @@ def cleanup_proxies(
     return deleted, freed
 
 
+_SHA256_RE = re.compile(r"^[0-9a-fA-F]{8,64}$")
+
+
 def delete_proxy(cache_dir: Path, sha256: str) -> int:
     """Удаляет все proxy для конкретного source (любой profile_id). Возвращает n удалённых."""
+
+    # Защита от glob-инъекции: sha256 = только hex 8-64 символа.
+    # Без неё "********" или ".." в параметре сматчили бы/удалили чужие файлы.
+    if not _SHA256_RE.match(sha256):
+        raise ValueError(f"invalid sha256 identifier: {sha256!r}")
 
     deleted = 0
     for path in cache_dir.glob(f"{sha256}__*.mp4"):

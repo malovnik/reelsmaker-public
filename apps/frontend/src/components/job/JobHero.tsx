@@ -94,7 +94,7 @@ export function JobHero({
                 ? "bg-[color:var(--danger)]"
                 : job.status === "done"
                   ? "bg-[color:var(--success)]"
-                  : "gradient-accent",
+                  : "bg-[color:var(--gold)]",
             ].join(" ")}
             style={{ width: `${progress}%` }}
           />

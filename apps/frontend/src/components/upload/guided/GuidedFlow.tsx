@@ -29,8 +29,19 @@ import {
   SetupProgress,
   StepShell,
 } from "@/components/upload/guided/StepChrome";
+import {
+  NO_TRANSCRIBER_MESSAGE,
+  transcriberLabel,
+} from "@/lib/constants/transcribers";
 
 const ACCEPTED = [".mp4", ".mov", ".mkv", ".webm", ".m4v"];
+
+/** Короткое пояснение под каждым движком для Пошагового режима. */
+const TRANSCRIBER_DESC: Record<string, string> = {
+  stable_ts_mlx: "Бесплатно, видео не уходит в интернет. Точные тайминги.",
+  mlx_whisper: "Бесплатно и локально, видео не уходит в интернет.",
+  deepgram: "Облако: точнее, но нужен ключ и оплата.",
+};
 
 function isAcceptedFile(file: File): boolean {
   if (file.type.startsWith("video/")) return true;
@@ -594,9 +605,6 @@ export function GuidedFlow({
   // ── S6 Модели ─────────────────────────────────────────────────────────
   if (screen === 6) {
     const transcribers = models.available_transcribers;
-    const localTranscriber =
-      transcribers.find((t) => t !== "deepgram") ?? transcribers[0];
-    const cloudTranscriber = transcribers.find((t) => t === "deepgram");
     const providers = models.available_providers.filter(
       (p) => p === "gemini" || p === "zhipu",
     );
@@ -617,29 +625,25 @@ export function GuidedFlow({
           <span className="text-[0.8125rem] font-medium text-[var(--paper)]">
             Распознавание речи
           </span>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <RadioCard
-              active={state.transcriber !== "deepgram"}
-              onClick={() =>
-                localTranscriber && actions.setTranscriber(localTranscriber)
-              }
-              title="На моём Mac"
-              desc="Бесплатно, видео не уходит в интернет. По умолчанию."
-            />
-            <RadioCard
-              active={state.transcriber === "deepgram"}
-              disabled={!cloudTranscriber}
-              onClick={() =>
-                cloudTranscriber && actions.setTranscriber(cloudTranscriber)
-              }
-              title="В облаке (Deepgram)"
-              desc={
-                cloudTranscriber
-                  ? "Точнее, но нужен ключ и оплата."
-                  : "Недоступно — нет ключа Deepgram."
-              }
-            />
-          </div>
+          {transcribers.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {transcribers.map((t) => (
+                <RadioCard
+                  key={t}
+                  active={state.transcriber === t}
+                  onClick={() => actions.setTranscriber(t)}
+                  title={transcriberLabel(t)}
+                  desc={TRANSCRIBER_DESC[t] ?? ""}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="border border-[var(--copper)] bg-[var(--ink-2)] p-4">
+              <p className="text-[0.8125rem] leading-relaxed text-[var(--copper)]">
+                {NO_TRANSCRIBER_MESSAGE}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -719,9 +723,9 @@ export function GuidedFlow({
       { label: "Субтитры", value: subtitleName, step: 4 },
       {
         label: "Модели",
-        value: `${state.transcriber === "deepgram" ? "Облако" : "Mac"} · ${
-          state.provider === "gemini" ? "Gemini" : "Zhipu"
-        }`,
+        value: `${
+          state.transcriber ? transcriberLabel(state.transcriber) : "—"
+        } · ${state.provider === "gemini" ? "Gemini" : "Zhipu"}`,
         step: 6,
       },
     ];

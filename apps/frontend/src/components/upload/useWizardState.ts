@@ -190,11 +190,23 @@ export function useWizardState(
     models.defaults[defaultProvider] ??
     models.defaults["gemini"] ??
     "gemini-3.1-flash-lite-preview";
-  const defaultTranscriber = models.available_transcribers[0] ?? "mlx_whisper";
+  // STT платформо-зависим: список приходит с бэкенда (= /health.transcribers).
+  // Пусто на Win/Linux без ключа Deepgram. Дефолт — первый доступный движок.
+  const defaultTranscriber = models.available_transcribers[0] ?? "";
 
   const [provider, setProvider] = useState<string>(defaultProvider);
   const [llmModel, setLlmModel] = useState<string>(defaultModel);
   const [transcriber, setTranscriber] = useState<string>(defaultTranscriber);
+
+  // Если выбранный движок исчез из доступного списка (напр. stale stable_ts_mlx
+  // на Windows) — переключаемся на первый доступный, чтобы не отправить в
+  // POST /jobs движок, который бэкенд отклонит.
+  useEffect(() => {
+    const list = models.available_transcribers;
+    if (list.length > 0 && !list.includes(transcriber)) {
+      setTranscriber(list[0]);
+    }
+  }, [models.available_transcribers, transcriber]);
   const [aspect, setAspect] = useState<Aspect>("9:16");
   const [fitMode, setFitMode] = useState<FitMode>("fill");
   const [sourceLang, setSourceLang] = useState<SourceLanguage>("auto");

@@ -26,6 +26,10 @@ import {
   ToggleRow,
 } from "./WizardSteps";
 import { resolveHint } from "@/components/settings-shared";
+import {
+  NO_TRANSCRIBER_MESSAGE,
+  transcriberLabel,
+} from "@/lib/constants/transcribers";
 import { useToast, useWizardStateContext } from "@/contexts";
 import {
   ASPECTS,
@@ -65,12 +69,6 @@ const FIT_MODE_LABEL: Record<FitMode, string> = {
 const PROVIDER_LABEL: Record<string, string> = {
   gemini: "Google Gemini",
   zhipu: "Zhipu GLM",
-};
-
-const TRANSCRIBER_LABEL: Record<string, string> = {
-  stable_ts_mlx: "Локальный, точные тайминги (stable-ts)",
-  mlx: "Локальный, быстрый (MLX Whisper)",
-  deepgram: "Облачный (Deepgram)",
 };
 
 const PROFILE_LABEL: Record<string, string> = {
@@ -647,14 +645,20 @@ export function UploadWizard({
         <div className="mt-5 flex flex-col gap-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Распознавание речи" hintKey="transcriber">
-              <Select
-                value={state.transcriber}
-                onChange={actions.setTranscriber}
-                options={models.available_transcribers.map((t) => ({
-                  value: t,
-                  label: TRANSCRIBER_LABEL[t] ?? t,
-                }))}
-              />
+              {models.available_transcribers.length > 0 ? (
+                <Select
+                  value={state.transcriber}
+                  onChange={actions.setTranscriber}
+                  options={models.available_transcribers.map((t) => ({
+                    value: t,
+                    label: transcriberLabel(t),
+                  }))}
+                />
+              ) : (
+                <p className="text-[0.8125rem] leading-relaxed text-[color:var(--text-muted)]">
+                  {NO_TRANSCRIBER_MESSAGE}
+                </p>
+              )}
             </Field>
             <Field label="Модель ИИ (провайдер)" hintKey="llm_provider">
               <Select

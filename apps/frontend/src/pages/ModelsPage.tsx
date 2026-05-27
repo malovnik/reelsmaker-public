@@ -5,6 +5,10 @@ import {
   type VisionSettingsResponse,
 } from "@/lib/api";
 import { MoondreamSettings } from "@/components/MoondreamSettings";
+import {
+  NO_TRANSCRIBER_MESSAGE,
+  transcriberLabel,
+} from "@/lib/constants/transcribers";
 
 interface ModelsLoaderData {
   info: ModelsInfo | null;
@@ -56,14 +60,9 @@ export default function ModelsPage() {
             }}
             active={info.available_providers}
           />
-          <Block
-            title="Распознавание речи"
-            items={{
-              stable_ts_mlx: info.defaults.stable_ts_mlx,
-              mlx_whisper: info.defaults.mlx_whisper,
-              deepgram: info.defaults.deepgram,
-            }}
-            active={info.available_transcribers}
+          <TranscriberBlock
+            available={info.available_transcribers}
+            defaults={info.defaults}
           />
           {vision ? (
             <MoondreamSettings initial={vision} />
@@ -82,6 +81,52 @@ export default function ModelsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Распознавание речи — список платформо-зависим, источник истины = бэкенд
+ * (`available_transcribers` = `/health.transcribers`). На Windows/Linux MLX
+ * физически недоступен и в списке не появляется. Пустой список → подсказка про
+ * ключ Deepgram.
+ */
+function TranscriberBlock({
+  available,
+  defaults,
+}: {
+  available: string[];
+  defaults: Record<string, string | undefined>;
+}) {
+  return (
+    <section className="surface-card p-5">
+      <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+        Распознавание речи
+      </h2>
+      {available.length > 0 ? (
+        <dl className="flex flex-col gap-3">
+          {available.map((key) => (
+            <div key={key} className="flex items-start gap-3">
+              <span
+                className="mt-1 size-2 shrink-0 rounded-full bg-[color:var(--success)]"
+                aria-hidden="true"
+              />
+              <div className="flex flex-1 flex-col">
+                <dt className="text-sm text-[color:var(--text-primary)]">
+                  {transcriberLabel(key)}
+                </dt>
+                <dd className="font-mono text-xs text-[color:var(--text-muted)]">
+                  {defaults[key] ?? "—"}
+                </dd>
+              </div>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="text-sm leading-relaxed text-[color:var(--text-muted)]">
+          {NO_TRANSCRIBER_MESSAGE}
+        </p>
+      )}
+    </section>
   );
 }
 

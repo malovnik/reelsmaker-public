@@ -1,0 +1,730 @@
+@import "tailwindcss";
+
+/**
+ * Reelibra Design System — "Refined Cinema Dark".
+ *
+ * Phase 10 redesign (2026-04-28). Заменяет terminal/cinema dark предыдущей
+ * итерации:
+ *   - Палитра: тёплый indigo-warm dark вместо холодного blue-cold dark.
+ *   - Шрифты: Inter Variable (UI) + Geist Variable (display, numerals)
+ *     + JetBrains Mono (service caps). Fraunces убран.
+ *   - Базовый размер 17px (было 16px) — комфорт чтения для предпринимателей,
+ *     а не для разработчиков.
+ *   - Comfortable line-heights (1.55 body, 1.1 display).
+ *   - Мягкие radii 10-16px (было 4-10).
+ *   - Один насыщенный warm-gold accent против тёплого нейтрала.
+ *
+ * Все legacy-классы из Phase 9 сохранены и переопределены под новый стиль:
+ * .display-serif/.serif/.mono/.surface-card/.stamp/.btn/.divider/.score-ring/
+ * .heatmap/.range-track/.kbd/.grain/.gradient-accent/.link/.hair*/.micro/
+ * .caps/.tnum/.mute/.mute-2/.paper. JSX-разметка не правится.
+ */
+
+@theme {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
+}
+
+:root {
+  color-scheme: dark;
+
+  /* ────────── Шрифты ────────── */
+  --font-sans:
+    "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
+  --font-display:
+    "Geist Variable", "Inter Variable", system-ui, sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace,
+    "SF Mono", "Cascadia Code", monospace;
+  --font-serif: var(--font-display);
+
+  /* ────────── Surface hierarchy (warm dark) ──────────
+   * Hue 280 (тёплый indigo-фиолетовый), низкая chroma. Каждый шаг
+   * elevation = +0.02 lightness — тонко но визуально читается.
+   */
+  --ink:    oklch(0.155 0.008 280);   /* canvas */
+  --ink-2:  oklch(0.185 0.009 280);   /* raised cards */
+  --ink-3:  oklch(0.220 0.011 280);   /* sunken inputs */
+  --ink-4:  oklch(0.260 0.013 280);   /* overlays / hover */
+  --paper:     oklch(0.97 0.005 80);   /* primary text — warm white */
+  --paper-dim: oklch(0.86 0.008 80);   /* secondary text */
+  --white:     #ffffff;
+
+  /* ────────── Borders (hairlines) ────────── */
+  --line:      oklch(0.32 0.012 280);
+  --line-soft: oklch(0.25 0.010 280);
+
+  /* ────────── Muted text tiers ──────────
+   * Подняты на 4-5 пунктов lightness vs Phase 9 — для contrast/readability.
+   * mute теперь хорошо читается на ink, не "проваливается" в фон.
+   */
+  --mute:   oklch(0.66 0.012 280);
+  --mute-2: oklch(0.78 0.010 280);
+
+  /* ────────── Accent (warm cinema gold) ──────────
+   * Одна сатурированная golden-amber точка на тёплом нейтрале —
+   * "тёплый свет на тёмном". Hue 75 (warmer than прежний 88).
+   */
+  --gold:     oklch(0.84 0.16 75);
+  --gold-dim: oklch(0.66 0.12 75);
+  --ember:    oklch(0.72 0.19 45);
+  --focus:    oklch(0.84 0.16 75);
+
+  /* ────────── Semantic aliases ────────── */
+  --surface-canvas:  var(--ink);
+  --surface-raised:  var(--ink-2);
+  --surface-sunken:  var(--ink-3);
+  --surface-overlay: oklch(0.18 0.010 280 / 0.92);
+
+  --border-subtle:  var(--line-soft);
+  --border-default: var(--line);
+  --border-strong:  var(--paper);
+
+  --text-primary:   var(--paper);
+  --text-secondary: var(--paper-dim);
+  --text-muted:     var(--mute-2);
+  --text-disabled:  var(--mute);
+
+  --accent-primary:         var(--gold);
+  --accent-primary-hover:   oklch(0.88 0.16 75);
+  --accent-primary-subtle:  oklch(0.30 0.040 75);
+  --accent-on-primary:      oklch(0.18 0.020 75);
+
+  --success: oklch(0.78 0.15 155);
+  --warning: oklch(0.82 0.16 80);
+  --danger:  oklch(0.72 0.19 25);
+  --info:    oklch(0.78 0.14 225);
+
+  /* Profile accents (стабильны через переджайны для статусов) */
+  --profile-talking-head: oklch(0.78 0.14 225);
+  --profile-fashion:      oklch(0.74 0.20 0);
+  --profile-travel:       oklch(0.78 0.15 155);
+  --profile-screencast:   oklch(0.78 0.17 50);
+  --profile-custom:       var(--mute-2);
+
+  /* ────────── Shadows (warm cinematic) ──────────
+   * Тёплый offset через rgba(20, 16, 12, ...) — даёт "уютную" глубину
+   * вместо чисто-чёрного дропа.
+   */
+  --shadow-xs: 0 1px 2px rgba(20, 16, 12, 0.40);
+  --shadow-sm: 0 2px 8px rgba(20, 16, 12, 0.45);
+  --shadow-md: 0 12px 28px rgba(20, 16, 12, 0.50);
+  --shadow-lg: 0 28px 56px rgba(20, 16, 12, 0.55);
+  --shadow-gold: 0 0 0 1px oklch(0.84 0.16 75 / 0.4),
+                 0 8px 24px oklch(0.84 0.16 75 / 0.18);
+
+  /* ────────── Radii (мягкие, не острые, не pill) ────────── */
+  --radius-s: 8px;
+  --radius:   12px;
+  --radius-l: 18px;
+  --radius-xl: 24px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* 17px база — на 14" mac читается комфортно для всех 20 страниц.
+     Tailwind text-* пересчитываются через rem автоматически. */
+  font-size: 17px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 1rem;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  /* Subtle warm gradient на фоне — даёт "глубину" без явного градиента.
+     Радиальные пятна по углам моделируют lens vignette. */
+  background-image:
+    radial-gradient(
+      ellipse 1200px 800px at 0% 0%,
+      oklch(0.20 0.020 75 / 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 1000px 600px at 100% 100%,
+      oklch(0.20 0.025 280 / 0.15),
+      transparent 60%
+    );
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+#root,
+main {
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Scrollbars — тонкие тёплые с радиусом */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-4);
+  border-radius: 12px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+* {
+  scrollbar-color: var(--ink-4) transparent;
+  scrollbar-width: thin;
+}
+
+/* ────────── Focus ring ──────────
+ * 2px gold solid с 3px offset — заметно для tab-навигации, не давит
+ * во время простоя.
+ */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: var(--radius-s);
+}
+
+/* ────────── Type utilities ──────────
+ * .display-serif / .serif остались для backward compat,
+ * но теперь — sans display (Geist) с soft tracking.
+ */
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "zero", "ss01";
+  letter-spacing: 0;
+}
+.serif,
+.display-serif {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  line-height: 1.08;
+  font-feature-settings: "ss01", "cv11";
+}
+.display-serif {
+  font-feature-settings: "ss01", "cv11", "tnum";
+}
+.caps {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+.micro {
+  font-size: 0.6875rem; /* 11.7px — читается, но компактно */
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+.mute {
+  color: var(--mute);
+}
+.mute-2 {
+  color: var(--mute-2);
+}
+.paper {
+  color: var(--paper);
+}
+
+/* ────────── Surfaces ──────────
+ * surface-card: layered с subtle inner highlight.
+ * Inner highlight = 1px тёплый стих сверху → даёт "кинематографический"
+ * блик и читается как elevation, а не плоская карточка.
+ */
+.surface-card {
+  background: var(--ink-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.04),
+    var(--shadow-xs);
+}
+.surface-flush {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+}
+.surface-raised {
+  background: var(--ink-3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ────────── Hairlines ────────── */
+.hair    { border: 1px solid var(--line); }
+.hair-b  { border-bottom: 1px solid var(--line); }
+.hair-t  { border-top: 1px solid var(--line); }
+.hair-r  { border-right: 1px solid var(--line); }
+.hair-l  { border-left: 1px solid var(--line); }
+
+/* ────────── Stamp (mono micro-caps badge) ──────────
+ * Используется для status-бейджей и метаданных. Hot/ok варианты
+ * ярче чем в Phase 9 — за счёт повышенной saturation accent-цветов.
+ */
+.stamp {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  color: var(--mute-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  border-radius: var(--radius-s);
+  background: transparent;
+  font-weight: 500;
+}
+.stamp.hot {
+  color: var(--ember);
+  border-color: oklch(0.55 0.18 45);
+  background: oklch(0.30 0.08 45 / 0.25);
+}
+.stamp.ok {
+  color: var(--gold);
+  border-color: oklch(0.55 0.14 75);
+  background: oklch(0.30 0.06 75 / 0.25);
+}
+.stamp.solid {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+}
+
+/* ────────── Buttons — Reelibra ──────────
+ * .btn-primary теперь использует gold-accent вместо paper.
+ * .btn-paper оставлен для нейтральных primary-actions.
+ * Hover: shift-up + shadow + цветной ring (для accent buttons).
+ */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.8125rem; /* ~14px при 17px base */
+  padding: 10px 16px;
+  border-radius: var(--radius-s);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  letter-spacing: -0.005em;
+}
+.btn-primary {
+  background: var(--gold);
+  color: var(--accent-on-primary);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  background: var(--accent-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-gold);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+.btn-paper {
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 600;
+}
+.btn-paper:hover {
+  background: var(--white);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--paper);
+  border-color: var(--line);
+}
+.btn-ghost:hover {
+  border-color: var(--mute);
+  background: var(--ink-2);
+}
+.btn-quiet {
+  color: var(--mute-2);
+  padding: 6px 10px;
+}
+.btn-quiet:hover {
+  color: var(--paper);
+  background: var(--ink-2);
+}
+.btn-danger {
+  background: var(--danger);
+  color: var(--paper);
+  font-weight: 600;
+}
+.btn-danger:hover {
+  background: oklch(0.78 0.20 25);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px oklch(0.72 0.19 25 / 0.4),
+              0 8px 24px oklch(0.72 0.19 25 / 0.18);
+}
+.btn-danger:active {
+  transform: translateY(0);
+}
+
+/* ────────── Kbd chip ────────── */
+.kbd {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--mute-2);
+  background: var(--ink-2);
+}
+
+/* ────────── Range track ────────── */
+.range-track {
+  position: relative;
+  height: 6px;
+  background: var(--ink-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.range-track > span {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--gold);
+  border-radius: 3px;
+}
+
+/* ────────── Divider label ────────── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--mute);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--line-soft) 30%,
+    var(--line-soft) 70%,
+    transparent
+  );
+}
+
+/* ────────── Cinematic grain overlay (subtle) ──────────
+ * Mix-blend overlay opacity 0.025 — лёгкий шум, не давит.
+ */
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* ────────── Animations ────────── */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.slide-in {
+  animation: slide-in 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade-in {
+  animation: fade-in 0.3s ease both;
+}
+
+/* ────────── Score ring ──────────
+ * Conic-gradient gold с inner sunken background.
+ * В новой палитре gold ярче — кольцо «горит» на тёмном без перегруза.
+ */
+.score-ring {
+  --p: 92;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: conic-gradient(var(--gold) calc(var(--p) * 1%), var(--ink-3) 0);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.score-ring::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--ink-2);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.05);
+}
+.score-ring > span {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--paper);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ────────── Gradient accent ────────── */
+.gradient-accent {
+  background: linear-gradient(
+    90deg,
+    var(--gold) 0%,
+    var(--ember) 100%
+  );
+}
+
+/* ────────── Heatmap ────────── */
+.heatmap {
+  position: relative;
+  height: 52px;
+  background: var(--ink-3);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+
+/* ────────── Link ────────── */
+.link {
+  color: var(--paper);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.link:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ────────── Page chrome helpers ──────────
+ * .page-container — единый wrapper для всех страниц.
+ * .page-h1 — display heading с правильной шкалой.
+ * .page-subtitle — comfortable subtitle.
+ */
+.page-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 1280px;
+  padding: 2rem 1rem;
+}
+@media (min-width: 640px) {
+  .page-container { padding: 2.25rem 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .page-container { padding: 2.5rem 2rem; }
+}
+
+/* ────────── Page shell ──────────
+ * Главная обёртка для всех страниц. Заменяет хардкод
+ * `mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10`.
+ *
+ * Padding-inline скейлится агрессивно с mobile к десктопу — потому что
+ * слева находится sticky NavRail (232px на десктопе). Без щедрого
+ * padding-left контент липнет к границе сайдбара. На 1280+ даём 4rem
+ * (64px), на 1536+ даём 5rem (80px) — это рабочее «дыхание» рядом
+ * с тёмной NavRail-полосой.
+ */
+.page-shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1400px;
+  padding: 1.5rem 1.25rem;
+}
+@media (min-width: 640px) {
+  .page-shell { padding: 2rem 1.75rem; }
+}
+@media (min-width: 1024px) {
+  .page-shell { padding: 2.5rem 3rem; }
+}
+@media (min-width: 1280px) {
+  .page-shell { padding: 3rem 4rem; }
+}
+@media (min-width: 1536px) {
+  .page-shell { padding: 3.5rem 5rem; }
+}
+@media (min-width: 1920px) {
+  .page-shell { padding: 4rem 6rem; }
+}
+
+/* Тонкий визуальный divider между NavRail и контентом — vertical hairline
+ * с warm tint, едва заметная. Не border, а псевдоэлемент чтобы не
+ * увеличивать main width. */
+.page-shell--with-aside {
+  position: relative;
+}
+.page-shell--with-aside::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--line-soft) 20%,
+    var(--line-soft) 80%,
+    transparent
+  );
+  pointer-events: none;
+}
+.page-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--paper);
+}
+.page-subtitle {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--paper-dim);
+  max-width: 64ch;
+}
+
+/* ────────── Form controls (universal facelift) ──────────
+ * Все нативные input/textarea/select получают единый стиль — без правок
+ * в JSX. Только когда у элемента есть собственные классы Tailwind на
+ * background/border, наш стиль перебивается ими.
+ */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+textarea,
+select {
+  background: var(--ink-3);
+  color: var(--paper);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-s);
+  padding: 9px 12px;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="number"]:hover,
+input[type="search"]:hover,
+textarea:hover,
+select:hover {
+  border-color: var(--line);
+}
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="time"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px oklch(0.84 0.16 75 / 0.18);
+}
+::placeholder {
+  color: var(--mute);
+  opacity: 1;
+}
+
+/* Native checkbox/radio — accent gold */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--gold);
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ────────── Selection ────────── */
+::selection {
+  background: oklch(0.84 0.16 75 / 0.35);
+  color: var(--paper);
+}
+
+/* ────────── Reduced motion ────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

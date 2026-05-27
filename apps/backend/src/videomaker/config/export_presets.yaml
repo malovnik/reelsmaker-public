@@ -1,0 +1,74 @@
+# Пресеты для ffmpeg-экспорта финальных рилсов.
+# Используется renderer.py. Целевые платформы — Instagram Reels / TikTok / YouTube Shorts.
+
+defaults:
+  fps: 30
+  video_codec: h264_videotoolbox
+  video_tag: avc1           # H.264 tag для Instagram/TikTok/YouTube совместимости
+  audio_codec: aac
+  audio_bitrate: 192k
+  pix_fmt: yuv420p
+
+presets:
+  reels_9_16:
+    aspect: "9:16"
+    width: 1080
+    height: 1920
+    # 12 Mbps H.264 target для Publer direct upload <200 MB (90-сек рилс ≈ 135 MB).
+    # Ранее 25M HEVC давал 280 MB → не влезал в Publer /media multipart.
+    # Качество на уровне IG/YouTube Shorts рекомендаций (8-12 Mbps).
+    video_bitrate: "12M"
+    video_maxrate: "17M"
+    video_bufsize: "24M"
+    # fill — crop по центру. Хорошо для talking-head, но режет скринкасты.
+    fill_filter: "scale=-2:1920,crop=1080:1920:(iw-1080)/2:0"
+    # fit — letterbox с чёрными полосами. Содержимое не обрезается.
+    fit_filter: "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black"
+    subtitle_margin_v_fill: 200
+    subtitle_margin_v_fit: 720    # выше чёрной полосы 16:9→9:16 (608px видео между полосами 656px)
+
+  shorts_16_9:
+    aspect: "16:9"
+    width: 1920
+    height: 1080
+    video_bitrate: "12M"
+    video_maxrate: "17M"
+    video_bufsize: "24M"
+    fill_filter: "scale=1920:-2,crop=1920:1080:0:(ih-1080)/2"
+    fit_filter: "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black"
+    subtitle_margin_v_fill: 80
+    subtitle_margin_v_fit: 160
+
+  square_1_1:
+    aspect: "1:1"
+    width: 1080
+    height: 1080
+    video_bitrate: "10M"
+    video_maxrate: "14M"
+    video_bufsize: "20M"
+    fill_filter: "scale=1080:-2,crop=1080:1080:0:(ih-1080)/2"
+    fit_filter: "scale=1080:1080:force_original_aspect_ratio=decrease,pad=1080:1080:(ow-iw)/2:(oh-ih)/2:black"
+    subtitle_margin_v_fill: 120
+    subtitle_margin_v_fit: 240
+
+  portrait_4_5:
+    aspect: "4:5"
+    width: 1080
+    height: 1350
+    video_bitrate: "11M"
+    video_maxrate: "15M"
+    video_bufsize: "22M"
+    fill_filter: "scale=-2:1350,crop=1080:1350:(iw-1080)/2:0"
+    fit_filter: "scale=1080:1350:force_original_aspect_ratio=decrease,pad=1080:1350:(ow-iw)/2:(oh-ih)/2:black"
+    subtitle_margin_v_fill: 150
+    subtitle_margin_v_fit: 360
+
+# Дополнительные константы для ffmpeg-рендера
+render:
+  min_reel_duration_sec: 31.0
+  max_reel_duration_sec: 89.0
+  concat_transition_sec: 0.1     # минимальная длительность crossfade между сегментами
+  subtitle_font: "Arial"
+  subtitle_size_portrait: 64
+  subtitle_outline: 3
+  subtitle_shadow: 1

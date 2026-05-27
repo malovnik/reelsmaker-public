@@ -1,0 +1,76 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+node_modules/
+.next/
+dist/
+build/
+.turbo/
+.parcel-cache/
+
+.env
+.env.local
+.env.*.local
+*.local
+
+# ML model weights — ignore только на корневом уровне, чтобы не задеть
+# app-каталоги вроде apps/frontend/src/app/settings/models/.
+/models/
+/weights/
+*.bin
+*.onnx
+*.safetensors
+*.gguf
+
+# Runtime state и артефакты — создаются run.sh и пайплайном
+/data/
+
+uploads/
+outputs/
+renders/
+tmp/
+temp/
+cache/
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.avi
+*.wav
+*.mp3
+*.m4a
+
+*.db
+*.sqlite
+*.sqlite3
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Локальные IDE/агентские артефакты
+.claude/
+.serena/
+
+coverage/
+*.log
+
+# Сырые материалы концепт-бордов и личные заметки
+Референсы/
+будущие фичи.md
+/120
+/60%
+apps/backend/src/videomaker/data/
+static_analysis_semgrep_*/
+
+# Ralph Loop temporary task markers
+.ralph-task.md
+frontend.next-bak/

@@ -1,0 +1,20 @@
+{
+  "include": ["apps/backend/src", "apps/backend/tests"],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.venv",
+    "apps/frontend",
+    "apps/backend/alembic/versions"
+  ],
+  "venvPath": "apps/backend",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "extraPaths": ["apps/backend/src"],
+  "reportMissingImports": "error",
+  "reportMissingTypeStubs": "warning",
+  "reportUnknownMemberType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownVariableType": "none",
+  "typeCheckingMode": "basic"
+}

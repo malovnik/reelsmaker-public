@@ -1,0 +1,43 @@
+# Русские филлеры для удаления из транскрипта перед нарезкой.
+# Используются silence_cutter.py: слово считается филлером если оно
+# матчится с любым из pattern (re.IGNORECASE), и при этом не является
+# частью составного выражения (например, "типа того" — НЕ филлер, а "типа" — да).
+
+fillers:
+  - word: "ээ"
+    pattern: "^э{1,}$"
+    comment: "хезитация"
+  - word: "аа"
+    pattern: "^а{2,}$"
+    comment: "протяжное"
+  - word: "мм"
+    pattern: "^м{2,}$"
+    comment: "задумчивость"
+  - word: "ну"
+    pattern: "^ну{1,}$"
+    comment: "только если отдельно, не в связке 'ну и'"
+  - word: "как бы"
+    pattern: "^как\\s+бы$"
+    multi_word: true
+  - word: "типа"
+    pattern: "^типа$"
+  - word: "короче"
+    pattern: "^короче$"
+  - word: "в общем"
+    pattern: "^в\\s+общем$"
+    multi_word: true
+  - word: "так сказать"
+    pattern: "^так\\s+сказать$"
+    multi_word: true
+  - word: "это самое"
+    pattern: "^это\\s+самое$"
+    multi_word: true
+  - word: "как-то так"
+    pattern: "^как-то\\s+так$"
+    multi_word: true
+
+# Пороги для детекции тишины (RMS-based).
+silence:
+  rms_threshold_db: -40    # ниже -40 dB → тишина
+  min_silence_sec: 0.6     # убирать только паузы ≥ 0.6 сек
+  edge_padding_sec: 0.08   # оставлять 80мс по краям сохранённой речи

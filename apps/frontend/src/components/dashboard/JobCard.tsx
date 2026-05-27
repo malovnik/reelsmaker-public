@@ -140,7 +140,7 @@ export function JobCard({
         <span
           className={`hidden shrink-0 items-center gap-1.5 rounded-none px-2 py-0.5 text-[10px] font-semibold sm:inline-flex ${meta.bg} ${meta.text}`}
         >
-          <span className={`size-1.5 rounded-full ${meta.dot}`} />
+          <span className={`size-1.5 rounded-full is-round ${meta.dot}`} />
           {meta.label}
         </span>
         <span className="hidden shrink-0 font-mono text-[11px] text-[color:var(--text-muted)] md:inline">
@@ -212,7 +212,7 @@ export function JobCard({
         >
           <span
             aria-hidden="true"
-            className="size-1.5 rounded-full"
+            className="size-1.5 rounded-full is-round"
             style={{ backgroundColor: profileColor }}
           />
           {profileLabel}
@@ -228,7 +228,7 @@ export function JobCard({
             }}
             aria-pressed={isSelected}
             aria-label={isSelected ? "Снять выбор" : "Выбрать нарезку"}
-            className={`absolute right-3 top-3 flex size-8 items-center justify-center rounded-full border backdrop-blur transition-opacity ${
+            className={`absolute right-3 top-3 flex size-8 items-center justify-center rounded-none border backdrop-blur transition-opacity ${
               isSelected
                 ? "border-white/40 bg-[color:var(--accent-primary)] text-[color:var(--accent-on-primary)] opacity-100"
                 : "border-[color:var(--border-default)] bg-[color:var(--surface-overlay)] text-[color:var(--text-secondary)] opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
@@ -251,7 +251,7 @@ export function JobCard({
             ) : (
               <span
                 aria-hidden="true"
-                className="size-3 rounded-full border-2 border-current"
+                className="size-3 rounded-full is-round border-2 border-current"
               />
             )}
           </button>
@@ -276,7 +276,7 @@ export function JobCard({
           <span
             className={`inline-flex shrink-0 items-center gap-1.5 rounded-none px-2 py-0.5 text-[10px] font-semibold ${meta.bg} ${meta.text}`}
           >
-            <span className={`size-1.5 rounded-full ${meta.dot}`} />
+            <span className={`size-1.5 rounded-full is-round ${meta.dot}`} />
             {meta.label}
           </span>
         </div>

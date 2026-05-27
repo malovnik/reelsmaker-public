@@ -107,7 +107,7 @@ function TranscriberBlock({
           {available.map((key) => (
             <div key={key} className="flex items-start gap-3">
               <span
-                className="mt-1 size-2 shrink-0 rounded-full bg-[color:var(--success)]"
+                className="mt-1 size-2 shrink-0 rounded-full is-round bg-[color:var(--success)]"
                 aria-hidden="true"
               />
               <div className="flex flex-1 flex-col">
@@ -150,7 +150,7 @@ function Block({
           return (
             <div key={key} className="flex items-start gap-3">
               <span
-                className={`mt-1 size-2 shrink-0 rounded-full ${
+                className={`mt-1 size-2 shrink-0 rounded-full is-round ${
                   enabled
                     ? "bg-[color:var(--success)]"
                     : "bg-[color:var(--border-default)]"

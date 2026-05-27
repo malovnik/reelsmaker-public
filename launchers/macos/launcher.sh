@@ -228,7 +228,9 @@ else
     printf '%sсоздан из примера%s\n' "$YELLOW" "$RESET"
 fi
 # Проверка ключа Gemini — предупреждение, не блокер.
-gem="$(grep -E '^GEMINI_API_KEY=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d ' "'"'"'')"
+# || true: grep первым в pipe под set -o pipefail возвращает 1, если строки нет
+# (пользователь удалил/закомментировал GEMINI_API_KEY) → иначе set -e убил бы лаунчер.
+gem="$(grep -E '^GEMINI_API_KEY=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d ' "'"'"'' || true)"
 [[ -z "$gem" ]] && warn "GEMINI_API_KEY пуст — нарезка не заработает. Впишите ключ в Настройках после запуска."
 
 # Каталоги данных
@@ -250,7 +252,9 @@ log "  backend deps ОК"
 # Frontend deps
 step "Frontend (pnpm install)…"
 printf '%s…%s\n' "$DIM" "$RESET"
-( cd "$ROOT_DIR/apps/frontend" && pnpm install 2>&1 | tee -a "$BOOT_LOG" ) \
+# CI=1 + флаг подавляют интерактивный prompt pnpm («modules dir will be removed,
+# Proceed? Y/n») — при дабл-клике .command stdin не должен ничего спрашивать.
+( cd "$ROOT_DIR/apps/frontend" && CI=1 pnpm install --config.confirm-modules-purge=false 2>&1 | tee -a "$BOOT_LOG" ) \
     || die "Не удалось установить зависимости frontend." "Проверьте интернет и лог."
 log "  frontend deps ОК"
 
@@ -271,7 +275,7 @@ kill_graceful() {
         local alive=0
         for p in "${pids[@]}"; do kill -0 "$p" 2>/dev/null && alive=1; done
         (( alive == 0 )) && break
-        sleep 1; ((waited++))
+        sleep 1; waited=$((waited + 1))
     done
     for p in "${pids[@]}"; do kill -0 "$p" 2>/dev/null && kill -9 "$p" 2>/dev/null || true; done
     printf '%sОК%s\n' "$GREEN" "$RESET"
@@ -288,7 +292,6 @@ RE_ROOT="${ROOT_DIR//\//\\/}"
 found_stale=0
 declare -a stale_patterns=(
     "uvicorn videomaker.main"
-    "uv run uvicorn"
     "${RE_ROOT}/apps/frontend.*vite"
     "${RE_ROOT}/apps/frontend.*esbuild"
     "pnpm.*dev.*${RE_ROOT}"
@@ -315,7 +318,7 @@ free_port() {
         kill -TERM "${parr[@]}" 2>/dev/null || true
         local waited=0
         while (( waited < 5 )) && lsof -nP -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1; do
-            sleep 1; ((waited++))
+            sleep 1; waited=$((waited + 1))
         done
         pids="$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | tr '\n' ' ' || true)"
         if [[ -n "${pids// /}" ]]; then
@@ -333,14 +336,14 @@ free_port "$FRONTEND_PORT"
 # Мусорные файлы — НЕ трогаем *.db/-wal/-shm/uploads/artifacts.
 step "Временные файлы (.partial/.tmp/.lock)…"
 removed=0
-while IFS= read -r -d '' f; do rm -f "$f" && ((removed++)); done < <(
+while IFS= read -r -d '' f; do rm -f "$f" && removed=$((removed + 1)); done < <(
     find "$ROOT_DIR/data" \( -name '*.partial' -o -name '*.tmp' \) -type f -print0 2>/dev/null
 )
 # orphan-locks: только старше 1 мин (BSD find не принимает дробные -mmin;
 # свежий лок параллельного запуска не успеет состариться), и никогда не *.db.
 while IFS= read -r -d '' f; do
     case "$f" in *.db|*.db-wal|*.db-shm) continue;; esac
-    rm -f "$f" && ((removed++))
+    rm -f "$f" && removed=$((removed + 1))
 done < <(find "$ROOT_DIR/data" -name '*.lock' -type f -mmin +1 -print0 2>/dev/null)
 # stale bytecode
 find "$ROOT_DIR/apps/backend/src" -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
@@ -364,8 +367,10 @@ cleanup() {
     [[ -n "$BACKEND_PID" ]]  && kill -TERM "$BACKEND_PID"  2>/dev/null || true
     [[ -n "$FRONTEND_PID" ]] && kill -TERM "$FRONTEND_PID" 2>/dev/null || true
     sleep 2
+    # uvicorn videomaker.main — глобально уникальный модуль (это наш backend),
+    # поэтому путь не нужен. Голый "uv run uvicorn" НЕ якорим и НЕ убиваем: он
+    # родовой и прибил бы чужой проект пользователя с таким же раннером (fratricide).
     pkill -9 -f "uvicorn videomaker.main"            2>/dev/null || true
-    pkill -9 -f "uv run uvicorn"                      2>/dev/null || true
     pkill -9 -f "${ROOT_DIR}/apps/frontend.*vite"     2>/dev/null || true
     pkill -9 -f "${ROOT_DIR}/apps/frontend.*esbuild"  2>/dev/null || true
     rm -f "$PID_FILE" 2>/dev/null || true
@@ -394,8 +399,11 @@ healthy=0
 for _ in $(seq 1 60); do
     kill -0 "$BACKEND_PID" 2>/dev/null  || die "Backend упал на старте." "Лог: $LOG_DIR/backend.log"
     kill -0 "$FRONTEND_PID" 2>/dev/null || die "Frontend упал на старте." "Лог: $LOG_DIR/frontend.log"
+    # Фронт проверяем честным HTTP-GET, а не по LISTEN-сокету: Vite (strictPort)
+    # открывает сокет ДО окончания компиляции бандла, и браузер открылся бы на
+    # висящей странице. curl-GET отвечает только когда дев-сервер реально готов.
     if curl -fsS "http://$APP_HOST:$APP_PORT/docs" >/dev/null 2>&1 \
-       && lsof -nP -iTCP:"$FRONTEND_PORT" -sTCP:LISTEN -t >/dev/null 2>&1; then
+       && curl -fsS "http://localhost:$FRONTEND_PORT" >/dev/null 2>&1; then
         healthy=1; break
     fi
     sleep 1

@@ -35,6 +35,10 @@ from videomaker.models.post_production import SplitScreenConfig
 from videomaker.services.filter_graph_builder import build_filter_graph
 from videomaker.services.project_graph import ProjectGraph
 from videomaker.services.project_renderer import FILTER_COMPLEX_INLINE_LIMIT
+from videomaker.services.subprocess_utils import (
+    DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+    communicate_with_timeout,
+)
 
 log = get_logger(__name__)
 
@@ -358,7 +362,15 @@ async def render_split_single_pass(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        _, stderr_bytes = await proc.communicate()
+        try:
+            _, stderr_bytes = await communicate_with_timeout(
+                proc, timeout_sec=DEFAULT_SUBPROCESS_TIMEOUT_SEC
+            )
+        except TimeoutError as exc:
+            raise SplitScreenError(
+                f"single-pass split-screen timed out after "
+                f"{DEFAULT_SUBPROCESS_TIMEOUT_SEC:.0f}s, process killed"
+            ) from exc
         rc = proc.returncode
 
         if rc != 0:

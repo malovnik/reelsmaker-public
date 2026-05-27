@@ -53,7 +53,7 @@ export function FilterChipRow({ value, onChange, counts }: Props) {
             {chip.color ? (
               <span
                 aria-hidden="true"
-                className="size-1.5 rounded-full"
+                className="size-1.5 rounded-full is-round"
                 style={{ backgroundColor: active ? "currentColor" : chip.color }}
               />
             ) : null}

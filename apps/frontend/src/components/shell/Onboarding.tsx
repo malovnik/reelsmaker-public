@@ -64,18 +64,16 @@ function buildChecks(health: HealthResponse): CheckItem[] {
   ];
 }
 
-const MODE_CARDS: { mode: UiMode; title: string; desc: string; icon: string }[] = [
+const MODE_CARDS: { mode: UiMode; title: string; desc: string }[] = [
   {
     mode: "guided",
     title: "Пошаговый",
     desc: "Проведу за руку: источник → стиль → запуск. Опытные детали спрятаны.",
-    icon: "⊞",
   },
   {
     mode: "expert",
     title: "Эксперт",
     desc: "Все параметры на одном экране. Для тех, кто уже резал.",
-    icon: "⌘",
   },
 ];
 
@@ -244,10 +242,11 @@ export function Onboarding() {
                       : "border-[color:var(--line)] bg-transparent hover:border-[color:var(--mute)]",
                   ].join(" ")}
                 >
-                  <div className="flex items-center gap-2">
-                    <span aria-hidden="true" className="text-[color:var(--gold)]">
-                      {card.icon}
-                    </span>
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      aria-hidden="true"
+                      className="h-3.5 w-1 shrink-0 bg-[color:var(--gold)]"
+                    />
                     <span className="font-[family-name:var(--font-display)] text-base font-semibold text-[color:var(--paper)]">
                       {card.title}
                     </span>

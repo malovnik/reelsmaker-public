@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,6 +52,18 @@ from videomaker.services.runtime_settings_store import (
 )
 
 log = get_logger(__name__)
+
+
+# Абсолютные пути (POSIX и Windows) в тексте ошибки → плейсхолдер. Полная
+# ошибка уже в логе через log.exception; наружу (API/SSE) отдаём без раскрытия
+# файловой структуры сервера. Тип/категория ошибки сохраняются.
+_ABS_PATH_RE = re.compile(r"(?:[A-Za-z]:\\[^\s\"']+|/[^\s\"':]+(?:/[^\s\"':]+)+)")
+
+
+def _sanitize_error(message: str) -> str:
+    """Убирает абсолютные пути из текста, уходящего в API/SSE."""
+
+    return _ABS_PATH_RE.sub("<path>", message)
 
 
 _STAGE_RANGES: dict[JobStage, tuple[int, int]] = {
@@ -326,13 +339,19 @@ async def run_pipeline_safe(
         raise
     except FileNotFoundError as exc:
         log.exception("pipeline_missing_file", job_id=job_id)
-        await service.mark_error(job_id, error=f"missing file: {exc}")
+        await service.mark_error(
+            job_id, error=_sanitize_error(f"missing file: {exc}")
+        )
     except FfmpegError as exc:
         log.exception("pipeline_ffmpeg_failed", job_id=job_id)
-        await service.mark_error(job_id, error=f"ffmpeg: {exc}")
+        await service.mark_error(
+            job_id, error=_sanitize_error(f"ffmpeg: {exc}")
+        )
     except Exception as exc:
         log.exception("pipeline_failed", job_id=job_id)
-        await service.mark_error(job_id, error=str(exc))
+        await service.mark_error(
+            job_id, error=_sanitize_error(f"{type(exc).__name__}: {exc}")
+        )
 
 
 async def _advance(

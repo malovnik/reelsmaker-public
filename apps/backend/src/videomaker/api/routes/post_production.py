@@ -47,6 +47,10 @@ from videomaker.services.post_production_store import (
     PresetInUseError,
     PresetNotFoundError,
 )
+from videomaker.services.subprocess_utils import (
+    PROBE_SUBPROCESS_TIMEOUT_SEC,
+    communicate_with_timeout,
+)
 
 router = APIRouter(prefix="/post_production", tags=["post_production"])
 log = get_logger(__name__)
@@ -118,7 +122,15 @@ async def get_asset_thumbnail(
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await proc.communicate()
+    try:
+        stdout, stderr = await communicate_with_timeout(
+            proc, timeout_sec=PROBE_SUBPROCESS_TIMEOUT_SEC
+        )
+    except TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="ffmpeg thumbnail timed out",
+        ) from exc
     if proc.returncode != 0 or not stdout:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

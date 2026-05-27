@@ -81,7 +81,7 @@ export function MoondreamSettings({ initial }: Props) {
           </p>
         </div>
         <span
-          className={`mt-1 size-2 shrink-0 rounded-full ${healthColor}`}
+          className={`mt-1 size-2 shrink-0 rounded-full is-round ${healthColor}`}
           aria-hidden="true"
         />
       </header>

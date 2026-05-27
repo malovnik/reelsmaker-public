@@ -24,12 +24,12 @@ export function TranscriptCacheBadge({
   if (state === null) {
     return (
       <span
-        className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-3 py-1 text-[11px] font-medium text-[color:var(--text-muted)]"
+        className="inline-flex items-center gap-1.5 rounded-none border border-[color:var(--border-default)] bg-[color:var(--surface-raised)] px-3 py-1 text-[11px] font-medium text-[color:var(--text-muted)]"
         title="Статус кэша транскриптов"
       >
         <span
           aria-hidden="true"
-          className="size-1.5 rounded-full bg-[color:var(--text-muted)]"
+          className="size-1.5 rounded-full is-round bg-[color:var(--text-muted)]"
         />
         кэш: проверяю
       </span>
@@ -44,7 +44,7 @@ export function TranscriptCacheBadge({
       : "Транскрипт взят из кэша, распознавание речи не запускалось.";
     return (
       <span
-        className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--accent-primary)] bg-[color:var(--accent-primary-subtle)] px-3 py-1 text-[11px] font-semibold text-[color:var(--accent-primary-hover)]"
+        className="inline-flex items-center gap-1.5 rounded-none border border-[color:var(--accent-primary)] bg-[color:var(--accent-primary-subtle)] px-3 py-1 text-[11px] font-semibold text-[color:var(--accent-primary-hover)]"
         title={title}
       >
         <svg
@@ -72,12 +72,12 @@ export function TranscriptCacheBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--warning)]/60 bg-[color:var(--warning)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--warning)]"
+      className="inline-flex items-center gap-1.5 rounded-none border border-[color:var(--warning)]/60 bg-[color:var(--warning)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--warning)]"
       title="Запускается распознавание речи"
     >
       <span
         aria-hidden="true"
-        className="size-1.5 animate-pulse rounded-full bg-[color:var(--warning)]"
+        className="size-1.5 animate-pulse rounded-full is-round bg-[color:var(--warning)]"
       />
       распознаю речь
     </span>

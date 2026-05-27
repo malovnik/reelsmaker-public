@@ -168,7 +168,6 @@ export function TopBar({ onOpenNav }: Props) {
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <span className="flex-1 text-[12px]">Найти проект, клип, момент…</span>
-          <span className="kbd">⌘K</span>
         </div>
 
         <ModeSwitch />

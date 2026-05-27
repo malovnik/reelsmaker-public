@@ -49,7 +49,7 @@ export function HealthIndicator() {
     >
       <span
         aria-hidden="true"
-        className="size-2 rounded-full"
+        className="size-2 rounded-full is-round"
         style={{ backgroundColor: dotColor }}
       />
       <span className="mono hidden text-[10px] uppercase tracking-[0.12em] text-[color:var(--mute-2)] md:inline">

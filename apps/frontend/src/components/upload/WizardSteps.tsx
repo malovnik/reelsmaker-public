@@ -17,7 +17,7 @@ export function Step({
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline gap-3">
         <span
-          className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[color:var(--surface-sunken)] font-mono text-[11px] font-medium text-[color:var(--text-secondary)]"
+          className="flex size-6 shrink-0 items-center justify-center rounded-full is-round bg-[color:var(--surface-sunken)] font-mono text-[11px] font-medium text-[color:var(--text-secondary)]"
           aria-hidden="true"
         >
           {index}
@@ -181,11 +181,11 @@ export function ToggleRow({
         aria-checked={effective}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className="group/toggle relative flex size-11 shrink-0 items-center justify-center rounded-full disabled:cursor-not-allowed"
+        className="group/toggle relative flex size-11 shrink-0 items-center justify-center rounded-full is-round disabled:cursor-not-allowed"
       >
         <span
           className={[
-            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+            "relative inline-flex h-6 w-11 items-center rounded-full is-round transition-colors",
             effective
               ? "bg-[color:var(--accent-primary)]"
               : "bg-[color:var(--border-default)]",
@@ -194,7 +194,7 @@ export function ToggleRow({
         >
           <span
             className={[
-              "inline-block size-5 transform rounded-full bg-[color:var(--surface-raised)] shadow-[var(--shadow-xs)] transition-transform",
+              "inline-block size-5 transform rounded-full is-round bg-[color:var(--surface-raised)] shadow-[var(--shadow-xs)] transition-transform",
               effective ? "translate-x-[1.375rem]" : "translate-x-0.5",
             ].join(" ")}
           />

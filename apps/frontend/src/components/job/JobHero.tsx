@@ -64,7 +64,7 @@ export function JobHero({
           >
             <span
               aria-hidden="true"
-              className="size-1.5 rounded-full"
+              className="size-1.5 rounded-full is-round"
               style={{ backgroundColor: color }}
             />
             {label}
@@ -151,7 +151,7 @@ function StatusPill({ status, label }: { status: string; label: string }) {
       {status === "running" && (
         <span
           aria-hidden="true"
-          className="size-1.5 animate-pulse rounded-full bg-[color:var(--warning)]"
+          className="size-1.5 animate-pulse rounded-full is-round bg-[color:var(--warning)]"
         />
       )}
       {label}

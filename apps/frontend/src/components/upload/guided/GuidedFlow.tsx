@@ -421,7 +421,7 @@ export function GuidedFlow({
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "inline-block size-3 rounded-full border",
+                      "inline-block size-3 rounded-full is-round border",
                       active
                         ? "border-[var(--gold)] bg-[var(--gold)]"
                         : "border-[var(--mute)]",
@@ -893,7 +893,7 @@ function RadioCard({ active, onClick, title, desc, disabled }: RadioCardProps) {
         <span
           aria-hidden="true"
           className={cn(
-            "inline-block size-3 rounded-full border",
+            "inline-block size-3 rounded-full is-round border",
             active ? "border-[var(--gold)] bg-[var(--gold)]" : "border-[var(--mute)]",
           )}
         />

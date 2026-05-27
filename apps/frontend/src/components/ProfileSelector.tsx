@@ -90,16 +90,15 @@ export function ProfileSelector({ value, onChange, masks = [] }: Props) {
               onClick={() => onChange(p.id)}
               aria-pressed={selected}
               className={[
-                "relative flex w-full flex-col items-start gap-1.5 overflow-hidden rounded-xl border p-4 text-left outline-none transition-all duration-200",
+                "relative flex w-full flex-col items-start gap-1.5 overflow-hidden rounded-none border p-4 text-left outline-none transition-colors duration-200",
                 selected
-                  ? "bg-[color:var(--surface-raised)] shadow-[var(--shadow-md)]"
-                  : "border-[color:var(--border-default)] bg-[color:var(--surface-raised)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-sm)]",
+                  ? "bg-[color:var(--surface-raised)]"
+                  : "border-[color:var(--border-default)] bg-[color:var(--surface-raised)]",
               ].join(" ")}
               style={
                 selected
                   ? {
                       borderColor: p.color,
-                      boxShadow: `0 0 0 1px ${p.color}, var(--shadow-md)`,
                     }
                   : undefined
               }
@@ -119,7 +118,7 @@ export function ProfileSelector({ value, onChange, masks = [] }: Props) {
                 <div className="flex shrink-0 items-center gap-1.5">
                   {mask?.is_customized && (
                     <span
-                      className="rounded-full bg-[color:var(--accent-primary-subtle)] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-[color:var(--accent-primary-hover)]"
+                      className="rounded-none border border-[color:var(--accent-line)] bg-[color:var(--accent-primary-subtle)] px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wider text-[color:var(--accent-primary-hover)]"
                       title="Этот профиль ты уже настраивал"
                     >
                       настроено
@@ -127,7 +126,7 @@ export function ProfileSelector({ value, onChange, masks = [] }: Props) {
                   )}
                   {selected && (
                     <span
-                      className="flex size-5 items-center justify-center rounded-full text-[10px] text-white shadow-sm"
+                      className="flex size-5 items-center justify-center rounded-none text-[10px] text-[color:var(--ink)]"
                       style={{ backgroundColor: p.color }}
                       aria-hidden="true"
                     >
@@ -183,9 +182,9 @@ function ProfileTooltip({
         <span>Сюжет {storyPct}%</span>
         <span>{100 - storyPct}% картинка</span>
       </div>
-      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-[color:var(--surface-sunken)]">
+      <div className="mb-3 h-1.5 overflow-hidden rounded-full is-round bg-[color:var(--surface-sunken)]">
         <div
-          className="h-full rounded-full transition-[width]"
+          className="h-full rounded-full is-round transition-[width]"
           style={{ width: `${storyPct}%`, backgroundColor: accent }}
         />
       </div>

@@ -7,11 +7,10 @@
 
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from videomaker.core.config import Settings, get_settings
+from videomaker.core.config import IS_APPLE_SILICON, Settings, get_settings
 from videomaker.core.logging import get_logger
 from videomaker.services.transcribers.base import (
     Transcriber,
@@ -30,12 +29,12 @@ log = get_logger(__name__)
 def build_transcriber(name: str, settings: Settings | None = None) -> Transcriber:
     cfg = settings or get_settings()
     if name in ("stable_ts_mlx", "stable_ts", "mlx_whisper"):
-        # MLX доступен только на macOS/Apple Silicon. Ленивый импорт: на
+        # MLX доступен только на Apple Silicon. Ленивый импорт: на Intel-Mac/
         # Windows/Linux пакет не установлен, поэтому не тянем его на уровне модуля.
-        if sys.platform != "darwin":
+        if not IS_APPLE_SILICON:
             raise TranscriberError(
-                f"transcriber {name!r} (MLX) доступен только на macOS/Apple Silicon. "
-                "На Windows/Linux используйте 'deepgram' (нужен DEEPGRAM_API_KEY)."
+                f"transcriber {name!r} (MLX) доступен только на Apple Silicon. "
+                "На Intel-Mac/Windows/Linux используйте 'deepgram' (нужен DEEPGRAM_API_KEY)."
             )
         if name in ("stable_ts_mlx", "stable_ts"):
             from videomaker.services.transcribers.stable_ts_mlx_backend import (

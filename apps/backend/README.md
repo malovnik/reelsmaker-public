@@ -1,7 +1,10 @@
-# videomaker-backend
+# Reelibra — backend
 
-FastAPI-сервис, который обрабатывает видео по 5-стадийному pipeline:
-`ingest → transcribe → silence_cut → analyze (3-pass LLM) → render`.
+> Python-пакет называется `videomaker` (исторически) — это видно в командах
+> запуска (`uvicorn videomaker.main:app`). Продукт = Reelibra.
+
+FastAPI-сервис, который обрабатывает видео по многостадийному pipeline:
+`ingest → транскрипция → анализ драматургии (LLM) → отбор и компоновка → render`.
 
 Хранит прогресс в SQLite (через Alembic-миграции), транслирует события в
 SSE и раздаёт готовые рилсы через `/api/v1/files/{job_id}/{kind}/{name}`.
@@ -30,7 +33,7 @@ Docs: <http://127.0.0.1:8000/docs>. Health: `/api/v1/health`.
 uv run pytest -q                  # быстрые unit-тесты
 uv run pytest -m integration -q   # e2e с реальным ffmpeg
 uv run ruff check src/
-uv run mypy src/videomaker
+uv run pyright                     # статическая проверка типов
 uv run alembic check              # миграции в актуальном состоянии
 ```
 
@@ -43,7 +46,7 @@ src/videomaker/
 ├── models/        # SQLAlchemy-таблицы + Pydantic-схемы
 ├── services/
 │   ├── jobs.py                # JobService + in-memory JobEventBus
-│   ├── pipeline.py            # 5-stage orchestrator
+│   ├── pipeline.py            # многостадийный orchestrator
 │   ├── transcribers/          # mlx-whisper / deepgram
 │   ├── analyzers/             # 3-pass video analyzer + chunker
 │   ├── llm_client.py          # Gemini / Claude (prompt cache) / OpenAI

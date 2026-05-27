@@ -339,7 +339,7 @@ export function UploadWizard({
                   value={state.reelCount}
                   onChange={(e) => actions.setReelCount(Number(e.target.value))}
                   disabled={state.reelCountMode !== "custom"}
-                  className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[color:var(--border-default)] accent-[color:var(--accent-primary)]"
+                  className="h-1 flex-1 cursor-pointer appearance-none rounded-full is-round bg-[color:var(--border-default)] accent-[color:var(--accent-primary)]"
                   aria-label="Количество рилсов"
                 />
                 <input
@@ -829,12 +829,12 @@ export function UploadWizard({
       >
         {state.uploading ? (
           <>
-            <span className="inline-block size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span className="inline-block size-3 animate-spin rounded-full is-round border-2 border-current border-t-transparent" />
             Загружаем видео…
           </>
         ) : state.autoAnalyzing ? (
           <>
-            <span className="inline-block size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span className="inline-block size-3 animate-spin rounded-full is-round border-2 border-current border-t-transparent" />
             Робот анализирует дорожку…
           </>
         ) : (

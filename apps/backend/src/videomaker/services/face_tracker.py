@@ -34,6 +34,7 @@ from urllib.parse import urlparse
 
 from videomaker.core.logging import get_logger
 from videomaker.services.media import probe
+from videomaker.services.subprocess_utils import communicate_with_timeout
 
 # Float16 модель — баланс точности и размера. Short range для лиц ≤ 2m
 # (фронтальные интервью). URL стабилен и публичен на storage.googleapis.com.
@@ -347,7 +348,7 @@ async def _extract_frames(
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    _, stderr_bytes = await proc.communicate()
+    _, stderr_bytes = await communicate_with_timeout(proc)
     if proc.returncode != 0:
         raise FaceTrackerError(
             f"ffmpeg frame extraction failed (rc={proc.returncode}): "

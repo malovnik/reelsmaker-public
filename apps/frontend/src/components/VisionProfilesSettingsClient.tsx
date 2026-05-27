@@ -466,9 +466,9 @@ function BalanceBar({
         <span>Сюжет {storyPct}%</span>
         <span>{100 - storyPct}% картинка</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--surface-sunken)]">
+      <div className="h-1.5 overflow-hidden rounded-full is-round bg-[color:var(--surface-sunken)]">
         <div
-          className="h-full rounded-full bg-[color:var(--accent-primary)] transition-[width]"
+          className="h-full rounded-full is-round bg-[color:var(--accent-primary)] transition-[width]"
           style={{ width: `${storyPct}%` }}
         />
       </div>

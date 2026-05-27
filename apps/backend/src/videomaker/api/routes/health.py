@@ -10,6 +10,10 @@ from fastapi import APIRouter
 
 from videomaker import __version__
 from videomaker.core.config import Settings, get_settings
+from videomaker.services.subprocess_utils import (
+    PROBE_SUBPROCESS_TIMEOUT_SEC,
+    communicate_with_timeout,
+)
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -73,7 +77,9 @@ async def _run_and_capture_stdout(cmd: list[str]) -> str:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, _ = await proc.communicate()
+        stdout, _ = await communicate_with_timeout(
+            proc, timeout_sec=PROBE_SUBPROCESS_TIMEOUT_SEC
+        )
         return stdout.decode("utf-8", errors="replace")
-    except (FileNotFoundError, PermissionError):
+    except (FileNotFoundError, PermissionError, TimeoutError):
         return ""

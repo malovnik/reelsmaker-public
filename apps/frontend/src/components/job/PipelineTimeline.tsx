@@ -129,7 +129,7 @@ function StageMarker({
   if (error) {
     return (
       <div
-        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--danger)] text-[color:var(--paper)] shadow-sm"
+        className="flex size-5 shrink-0 items-center justify-center rounded-full is-round bg-[color:var(--danger)] text-[color:var(--paper)]"
         aria-hidden="true"
       >
         <svg
@@ -150,7 +150,7 @@ function StageMarker({
   if (past) {
     return (
       <div
-        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--accent-primary)] text-[color:var(--accent-on-primary)]"
+        className="flex size-5 shrink-0 items-center justify-center rounded-full is-round bg-[color:var(--accent-primary)] text-[color:var(--accent-on-primary)]"
         aria-hidden="true"
       >
         <svg
@@ -171,15 +171,15 @@ function StageMarker({
   if (active) {
     return (
       <div className="relative flex size-5 shrink-0 items-center justify-center" aria-hidden="true">
-        <span className="absolute size-5 rounded-full bg-[color:var(--accent-primary)] opacity-25 animate-ping" />
-        <span className="relative size-3 rounded-full bg-[color:var(--accent-primary)]" />
+        <span className="absolute size-5 rounded-full is-round bg-[color:var(--accent-primary)] opacity-25 animate-ping" />
+        <span className="relative size-3 rounded-full is-round bg-[color:var(--accent-primary)]" />
       </div>
     );
   }
   if (pending) {
     return (
       <div
-        className="size-5 shrink-0 rounded-full border border-[color:var(--border-default)] bg-[color:var(--surface-raised)]"
+        className="size-5 shrink-0 rounded-full is-round border border-[color:var(--border-default)] bg-[color:var(--surface-raised)]"
         aria-hidden="true"
       />
     );

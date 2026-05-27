@@ -59,6 +59,12 @@ $PyVersion     = '3.12.8'
 $PyBuildTag    = '20241219'   # релиз python-build-standalone
 $NodeVersion   = '20.18.1'
 $UvVersion     = '0.5.11'
+# ffmpeg: gyan.dev release build, закреплённая версия (постоянный GitHub-релиз,
+# в отличие от ежедневно перезаливаемого BtbN latest → 404/невоспроизводимость).
+$FfmpegVersion = '8.1.1'
+# SHA256 артефакта ffmpeg-8.1.1-full_build.zip (вычислен с самого GitHub-релиза,
+# на который пиннимся). Ловит обрыв/повреждение/подмену закачки.
+$FfmpegSha256  = '49b28c5f16addd40239a66949973458769b7056fb7752c30ac0d53389d09a552'
 
 # Backend host/port (дефолты как в .env.example; .env читаем ниже)
 $AppHost = '127.0.0.1'
@@ -305,11 +311,19 @@ function Ensure-Ffmpeg {
         return
     }
     Write-Warn 'ffmpeg не найден — ставлю static-сборку (gpl)'
-    # BtbN — репутационно чистые статические сборки, минимум проблем со SmartScreen.
-    $asset = 'ffmpeg-master-latest-win64-gpl.zip'
-    $url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/$asset"
+    # gyan.dev release build — закреплённая версия с постоянным GitHub-релизом.
+    # (BtbN latest перезаливается ежедневно → разные сборки у разных юзеров и 404
+    #  в момент перезаливки. Здесь же тег версии не исчезает.)
+    $asset = "ffmpeg-$FfmpegVersion-full_build.zip"
+    $url = "https://github.com/GyanD/codexffmpeg/releases/download/$FfmpegVersion/$asset"
     $dl  = Join-Path $DownloadDir $asset
     Download-File -Url $url -OutFile $dl -Label 'ffmpeg'
+    # Проверка целостности: SHA256 закреплённого артефакта.
+    $actualSha = (Get-FileHash -LiteralPath $dl -Algorithm SHA256).Hash
+    if ($actualSha -ne $FfmpegSha256.ToUpper()) {
+        Remove-Item -LiteralPath $dl -Force -ErrorAction SilentlyContinue
+        throw "Контрольная сумма ffmpeg не совпала (ожидалось $FfmpegSha256, получено $actualSha). Файл повреждён или подменён — скачивание прервано."
+    }
     $extractTmp = Join-Path $RuntimeDir 'ffmpeg-tmp'
     if (Test-Path -LiteralPath $extractTmp) { Remove-Item -LiteralPath $extractTmp -Recurse -Force -ErrorAction SilentlyContinue }
     Expand-Zip -ZipPath $dl -Dest $extractTmp

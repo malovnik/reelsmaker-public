@@ -82,3 +82,26 @@ static_analysis_semgrep_*/
 # Ralph Loop temporary task markers
 .ralph-task.md
 frontend.next-bak/
+
+# Внутренние артефакты разработки — остаются на диске, в публичный репо не идут.
+# Заметки, мысли, контекст для LLM, состояние оркестрации, чанки рефакторинга.
+/idea.md
+/CONTEXT.md
+/RM-CHUNKS/
+/_orchestration/
+/.claude/
+docs/audit/
+docs/diagnostics/
+docs/plans/
+docs/research/
+docs/autonomous-roadmap-*.md
+docs/guide.md
+docs/opusclip-*.md
+docs/production-features-plan.md
+docs/prompt-engineering-brief.md
+docs/reelibra-redesign-roadmap.md
+docs/regression-investigation-*.md
+docs/screencast-zoom-research.md
+docs/top-down-*.md
+docs/viral-clipper-research-*.md
+docs/vision-*.md

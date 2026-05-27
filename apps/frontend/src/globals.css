@@ -748,6 +748,32 @@ input[type="radio"] {
   color: var(--ink);
 }
 
+/* ────────── Brand enforcement (брендбук: radius:0, без теней) ──────────
+ * Tailwind 4 компилирует rounded-full как calc(infinity x 1px) (хардкод, не
+ * radius-токен) и инлайнит литеральные shadow-утилиты из @theme-дефолтов на
+ * сборке. Обнуление токенов radius и shadow эти утилиты не перебивает. Гасим
+ * их глобально здесь. Семантичные круги (статус-доты, спиннеры, toggle-thumb,
+ * аватарки-превью) используют явный класс is-round, который сюда не попадает.
+ */
+@layer utilities {
+  .rounded-full:not(.is-round) {
+    border-radius: 0;
+  }
+  .shadow-sm,
+  .shadow,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: none;
+  }
+}
+
+/* Семантичный круг — там, где форма осмысленна (LED-доты, спиннеры, аватарки). */
+.is-round {
+  border-radius: 9999px;
+}
+
 /* ────────── Reduced motion ────────── */
 @media (prefers-reduced-motion: reduce) {
   *,

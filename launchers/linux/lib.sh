@@ -119,7 +119,7 @@ ML-зависимости (mediapipe, llama-cpp, onnxruntime) не имеют mu
 
     # Версия glibc.
     local glibc_ver major minor
-    glibc_ver="$(ldd --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)"
+    glibc_ver="$(ldd --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1 || true)"
     if [[ -z "$glibc_ver" ]]; then
         warn "Не удалось определить версию glibc — продолжаю, но при ошибках wheel'ов нужна glibc >= 2.35."
         return 0
@@ -309,7 +309,7 @@ ensure_ffmpeg() {
     fi
     # 2) system ffmpeg >= 7
     if command -v ffmpeg >/dev/null 2>&1; then
-        local v; v="$(ffmpeg -version 2>/dev/null | head -1 | grep -oE '[0-9]+(\.[0-9]+)*' | head -1)"
+        local v; v="$(ffmpeg -version 2>/dev/null | head -1 | grep -oE '[0-9]+(\.[0-9]+)*' | head -1 || true)"
         local maj="${v%%.*}"
         if [[ -n "$maj" ]] && (( maj >= FFMPEG_MAJOR_MIN )); then
             FFMPEG_BIN="$(command -v ffmpeg)"; ok "ffmpeg (системный): $v"; return 0
@@ -359,9 +359,19 @@ ensure_env() {
 }
 
 ensure_data_dirs() {
+    # Полный набор подкаталогов data/ (в т.ч. proxies — иначе clean_stale_files
+    # упадёт на первом запуске: find по несуществующему каталогу + pipefail + set -e).
+    # Список синхронизирован с macOS-лаунчером.
     mkdir -p "$REELIBRA_ROOT/data/uploads" \
              "$REELIBRA_ROOT/data/artifacts" \
              "$REELIBRA_ROOT/data/logs" \
+             "$REELIBRA_ROOT/data/proxies" \
+             "$REELIBRA_ROOT/data/thumbnails" \
+             "$REELIBRA_ROOT/data/transcripts" \
+             "$REELIBRA_ROOT/data/face_cache" \
+             "$REELIBRA_ROOT/data/vision_cache" \
+             "$REELIBRA_ROOT/data/models" \
+             "$REELIBRA_ROOT/data/post_production_assets" \
              "$RUN_DIR"
     ok "Каталоги данных готовы"
 }
@@ -423,10 +433,12 @@ pids_orphan_ffmpeg() {
 pids_on_port() {
     local port="$1" pids=""
     if command -v ss >/dev/null 2>&1; then
-        pids="$(ss -ltnHp "sport = :$port" 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | sort -u | tr '\n' ' ')"
+        # || true: свободный порт → ss пусто → grep exit 1 → под pipefail убило бы
+        # присваивание и весь скрипт через set -e (срабатывает на КАЖДОМ запуске).
+        pids="$(ss -ltnHp "sport = :$port" 2>/dev/null | grep -oE 'pid=[0-9]+' | grep -oE '[0-9]+' | sort -u | tr '\n' ' ' || true)"
     fi
     if [[ -z "${pids// /}" ]] && command -v lsof >/dev/null 2>&1; then
-        pids="$(lsof -t -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | sort -u | tr '\n' ' ')"
+        pids="$(lsof -t -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | sort -u | tr '\n' ' ' || true)"
     fi
     printf '%s' "$pids"
 }
@@ -519,9 +531,13 @@ clean_stale_files() {
     local d="$REELIBRA_ROOT/data"
     [[ -d "$d" ]] || return 0
     local n=0
-    n=$(( n + $(find "$d/proxies" -name '*.lock'    -type f -mmin +30 -print -delete 2>/dev/null | wc -l) ))
-    n=$(( n + $(find "$d/proxies" -name '*.partial' -type f -mmin +30 -print -delete 2>/dev/null | wc -l) ))
-    n=$(( n + $(find "$d"         -name '*.tmp'     -type f -mmin +30 -print -delete 2>/dev/null | wc -l) ))
+    # `|| true` после wc: find на отсутствующем каталоге → exit 1, который под
+    # pipefail протёк бы в $((…)) и убил скрипт через set -e. Гард по каталогу + true.
+    if [[ -d "$d/proxies" ]]; then
+        n=$(( n + $(find "$d/proxies" -name '*.lock'    -type f -mmin +30 -print -delete 2>/dev/null | wc -l || true) ))
+        n=$(( n + $(find "$d/proxies" -name '*.partial' -type f -mmin +30 -print -delete 2>/dev/null | wc -l || true) ))
+    fi
+    n=$(( n + $(find "$d"         -name '*.tmp'     -type f -mmin +30 -print -delete 2>/dev/null | wc -l || true) ))
     # bytecode — как в run.sh, чтобы подхватились свежие .py.
     find "$REELIBRA_ROOT/apps/backend/src" -type d -name '__pycache__' -prune -exec rm -rf {} + 2>/dev/null || true
     if (( n > 0 )); then ok "Удалено stale-файлов: $n (.lock/.partial/.tmp старше 30 мин)"; else info "Stale-файлов нет"; fi
@@ -651,6 +667,11 @@ start_services() {
     # PATH с нашими портативными бинарями (ffmpeg/node/uv видны пайплайну).
     local launch_path="$ff_dir:$node_bindir:$UV_HOME:$PATH"
 
+    # Лог-файлы сервисов: иначе при .desktop/zenity-запуске stdout уходит в никуда,
+    # а сообщение wait_health «проверь логи» отсылает к несуществующему файлу.
+    local log_dir="$REELIBRA_ROOT/data/logs"
+    mkdir -p "$log_dir"
+
     step "..." "Запускаю backend (uvicorn :$app_port)…"
     (
         cd "$be"
@@ -658,14 +679,14 @@ start_services() {
             "$UV_BIN" run uvicorn videomaker.main:app \
             --host "$app_host" --port "$app_port" \
             --log-level "${APP_LOG_LEVEL:-info}"
-    ) &
+    ) >>"$log_dir/backend.log" 2>&1 &
     BACKEND_PID=$!
 
     step "..." "Запускаю frontend (Vite :$FRONTEND_PORT)…"
     (
         cd "$fe"
         exec env PATH="$launch_path" "$PNPM_BIN" dev
-    ) &
+    ) >>"$log_dir/frontend.log" 2>&1 &
     FRONTEND_PID=$!
 
     write_pid_file

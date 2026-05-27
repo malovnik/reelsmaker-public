@@ -277,7 +277,7 @@ function LikeOverlay({
         aria-label={liked === "dislike" ? "Убрать дизлайк" : "Дизлайк"}
         className={`flex size-11 items-center justify-center rounded-none border backdrop-blur-md transition-colors disabled:opacity-50 ${
           liked === "dislike"
-            ? "border-[color:var(--chi,#8B2500)] bg-[color:var(--chi,#8B2500)] text-white shadow-lg"
+            ? "border-[color:var(--chi,#8B2500)] bg-[color:var(--chi,#8B2500)] text-[color:var(--paper)] shadow-lg"
             : "border-white/15 bg-black/55 text-white hover:bg-black/75"
         }`}
       >
@@ -327,7 +327,7 @@ function SelectCheckbox({
           <polyline points="20 6 9 17 4 12" />
         </svg>
       ) : (
-        <span className="size-4 rounded-full border-2 border-white/70" aria-hidden="true" />
+        <span className="size-4 rounded-full is-round border-2 border-white/70" aria-hidden="true" />
       )}
     </button>
   );

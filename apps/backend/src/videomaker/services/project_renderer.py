@@ -38,6 +38,10 @@ from videomaker.services.filter_graph_builder import (
     build_filter_graph,
 )
 from videomaker.services.project_graph import ProjectGraph
+from videomaker.services.subprocess_utils import (
+    DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+    wait_with_timeout,
+)
 
 log = get_logger(__name__)
 
@@ -52,6 +56,9 @@ Darwin ARG_MAX = 256 KB. Запас 2.5×.
 
 PROGRESS_THROTTLE_SEC = 0.5
 """Минимальный интервал между вызовами on_progress."""
+
+STDERR_TAIL_CAP = 64 * 1024
+"""Потолок кольцевого буфера stderr (используется только хвост[-1200:])."""
 
 _FILTER_INIT_ERROR_RE = re.compile(r"Error initializing filter '([\w_]+)'")
 _PROGRESS_KV_RE = re.compile(r"^([a-zA-Z_]+)=([^\n]*)$")
@@ -134,6 +141,8 @@ class ProjectRenderer:
         )
         wall_start = time.monotonic()
 
+        stdout_task: asyncio.Task[None] | None = None
+        stderr_task: asyncio.Task[str] | None = None
         try:
             proc = await asyncio.create_subprocess_exec(
                 *argv,
@@ -153,10 +162,27 @@ class ProjectRenderer:
                 name=f"stderr:{graph.reel_id}",
             )
 
-            return_code = await proc.wait()
+            try:
+                return_code = await wait_with_timeout(
+                    proc, timeout_sec=DEFAULT_SUBPROCESS_TIMEOUT_SEC
+                )
+            except TimeoutError as exc:
+                log.error(
+                    "project_render_timeout",
+                    reel_id=graph.reel_id,
+                    timeout_sec=DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+                )
+                raise ProjectRendererError(
+                    graph.reel_id,
+                    f"ffmpeg timed out after "
+                    f"{DEFAULT_SUBPROCESS_TIMEOUT_SEC:.0f}s, process killed",
+                ) from exc
             await stdout_task
             stderr_text = await stderr_task
         finally:
+            for task in (stdout_task, stderr_task):
+                if task is not None and not task.done():
+                    task.cancel()
             if script_file is not None:
                 script_file.unlink(missing_ok=True)
 
@@ -344,13 +370,18 @@ class ProjectRenderer:
     ) -> str:
         if stream is None:
             return ""
-        chunks: list[bytes] = []
+        # Используется только хвост (stderr_text[-1200:]). Держим кольцевой
+        # буфер последних STDERR_TAIL_CAP байт, чтобы патологический инпут,
+        # сыплющий ошибки на каждый кадр, не раздул память worker'а.
+        buf = bytearray()
         while True:
             chunk = await stream.read(64 * 1024)
             if not chunk:
                 break
-            chunks.append(chunk)
-        return b"".join(chunks).decode("utf-8", errors="replace")
+            buf.extend(chunk)
+            if len(buf) > STDERR_TAIL_CAP:
+                del buf[:-STDERR_TAIL_CAP]
+        return bytes(buf).decode("utf-8", errors="replace")
 
 
 def _build_render_progress(

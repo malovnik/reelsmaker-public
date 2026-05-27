@@ -110,7 +110,7 @@ export function SplitScreenSection({
 
       {splitScreen.enabled && (
         <>
-          <div className="rounded-none border border-[color:var(--warning)]/40/30 bg-amber-950/20 p-3 text-sm text-[color:var(--warning)]">
+          <div className="rounded-none border border-[color:var(--warning)]/40 bg-[color:var(--accent-primary-subtle)] p-3 text-sm text-[color:var(--warning)]">
             <div className="mb-1 font-medium">Split-режим активен</div>
             <div className="leading-relaxed">
               Основные настройки <span className="font-mono">fit / fill</span>{" "}

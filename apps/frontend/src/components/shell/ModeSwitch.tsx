@@ -13,7 +13,6 @@ interface SegmentDef {
   mode: UiMode;
   full: string;
   short: string;
-  icon: string;
   toast: string;
 }
 
@@ -22,14 +21,12 @@ const SEGMENTS: SegmentDef[] = [
     mode: "guided",
     full: "Пошаговый",
     short: "Шаг",
-    icon: "⊞",
     toast: "Режим: Пошаговый. Веду по шагам, лишнее спрятано.",
   },
   {
     mode: "expert",
     full: "Эксперт",
     short: "Эксп",
-    icon: "⌘",
     toast: "Режим: Эксперт. Показываю все опции сразу.",
   },
 ];
@@ -59,14 +56,13 @@ export function ModeSwitch() {
             aria-pressed={active}
             onClick={() => handle(seg)}
             className={[
-              "mono inline-flex min-h-11 items-center gap-1.5 px-2.5 text-[11px] uppercase tracking-[0.1em] transition-colors duration-150",
+              "mono inline-flex min-h-11 items-center px-3 text-[11px] uppercase tracking-[0.1em] transition-colors duration-150",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--gold)]",
               active
                 ? "bg-[color:var(--gold)] text-[color:var(--ink)]"
                 : "bg-transparent text-[color:var(--mute-2)] hover:text-[color:var(--paper)]",
             ].join(" ")}
           >
-            <span aria-hidden="true">{seg.icon}</span>
             <span className="hidden sm:inline">{seg.full}</span>
             <span className="sm:hidden">{seg.short}</span>
           </button>

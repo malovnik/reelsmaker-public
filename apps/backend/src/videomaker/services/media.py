@@ -14,6 +14,11 @@ from pathlib import Path
 from typing import Any
 
 from videomaker.core.logging import get_logger
+from videomaker.services.subprocess_utils import (
+    DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+    PROBE_SUBPROCESS_TIMEOUT_SEC,
+    communicate_with_timeout,
+)
 
 log = get_logger(__name__)
 
@@ -131,7 +136,15 @@ async def _run_and_capture(cmd: list[str]) -> str:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await proc.communicate()
+    try:
+        stdout, stderr = await communicate_with_timeout(
+            proc, timeout_sec=PROBE_SUBPROCESS_TIMEOUT_SEC
+        )
+    except TimeoutError as exc:
+        raise FfmpegError(
+            f"{shlex.join(cmd[:2])} ... timed out after "
+            f"{PROBE_SUBPROCESS_TIMEOUT_SEC:.0f}s, process killed"
+        ) from exc
     if proc.returncode != 0:
         raise FfmpegError(
             f"command {shlex.join(cmd)} failed (rc={proc.returncode}): {stderr.decode(errors='replace')[:500]}"
@@ -145,7 +158,15 @@ async def _run_and_raise(cmd: list[str]) -> None:
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.PIPE,
     )
-    _, stderr = await proc.communicate()
+    try:
+        _, stderr = await communicate_with_timeout(
+            proc, timeout_sec=DEFAULT_SUBPROCESS_TIMEOUT_SEC
+        )
+    except TimeoutError as exc:
+        raise FfmpegError(
+            f"{shlex.join(cmd[:3])} ... timed out after "
+            f"{DEFAULT_SUBPROCESS_TIMEOUT_SEC:.0f}s, process killed"
+        ) from exc
     if proc.returncode != 0:
         raise FfmpegError(
             f"{shlex.join(cmd[:3])} ... failed (rc={proc.returncode}): "

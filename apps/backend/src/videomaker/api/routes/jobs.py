@@ -63,6 +63,11 @@ from videomaker.services.project_graph import (
     AudioNormalizeSpec,
     ExportPresetSpec,
 )
+from videomaker.services.subprocess_utils import (
+    DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+    PROBE_SUBPROCESS_TIMEOUT_SEC,
+    communicate_with_timeout,
+)
 from videomaker.services.transcribers.cache import TranscriptCache
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -1218,7 +1223,16 @@ async def get_job_thumbnail(
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.PIPE,
         )
-        _, stderr = await proc.communicate()
+        try:
+            _, stderr = await communicate_with_timeout(
+                proc, timeout_sec=PROBE_SUBPROCESS_TIMEOUT_SEC
+            )
+        except TimeoutError as exc:
+            log.warning("thumbnail_ffmpeg_timeout", job_id=job_id)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="thumbnail generation timed out",
+            ) from exc
         if proc.returncode != 0 or not thumb_path.exists():
             log.warning(
                 "thumbnail_ffmpeg_failed",
@@ -1510,7 +1524,22 @@ async def export_reel_with_preset(
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.PIPE,
     )
-    _, stderr = await proc.communicate()
+    try:
+        _, stderr = await communicate_with_timeout(
+            proc, timeout_sec=DEFAULT_SUBPROCESS_TIMEOUT_SEC
+        )
+    except TimeoutError as exc:
+        output_path.unlink(missing_ok=True)
+        log.error(
+            "reel_export_transcode_timeout",
+            job_id=job_id,
+            reel_id=reel_id,
+            preset=preset,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="export transcode timed out",
+        ) from exc
     if proc.returncode != 0:
         output_path.unlink(missing_ok=True)
         stderr_tail = stderr.decode("utf-8", "ignore")[-800:]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import platform
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -10,10 +11,12 @@ from typing import Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# MLX (локальный STT) доступен только на macOS / Apple Silicon.
-# На Windows/Linux транскрипция идёт через Deepgram (cloud).
+# MLX (локальный STT) собран только под Apple Silicon (arm64). На Intel-Mac
+# колесо mlx не ставится и падает в рантайме, поэтому darwin недостаточно —
+# гейтим именно по arm64. На Windows/Linux/Intel-Mac STT идёт через Deepgram.
 IS_MACOS = sys.platform == "darwin"
-DEFAULT_TRANSCRIBER = "stable_ts_mlx" if IS_MACOS else "deepgram"
+IS_APPLE_SILICON = IS_MACOS and platform.machine() == "arm64"
+DEFAULT_TRANSCRIBER = "stable_ts_mlx" if IS_APPLE_SILICON else "deepgram"
 
 REPO_ROOT = Path(__file__).resolve().parents[5]
 DEFAULT_ENV_FILE = REPO_ROOT / ".env"
@@ -272,16 +275,16 @@ class Settings(BaseSettings):
     @property
     def available_transcribers(self) -> list[str]:
         # MLX-бэкенды (stable_ts_mlx default ±20-30ms, mlx_whisper fallback) —
-        # только на macOS/Apple Silicon. На Windows/Linux MLX не установлен →
-        # доступен только Deepgram (cloud, нужен DEEPGRAM_API_KEY).
-        mlx = ["stable_ts_mlx", "mlx_whisper"] if IS_MACOS else []
+        # только на Apple Silicon. На Intel-Mac/Windows/Linux MLX не
+        # установлен → доступен только Deepgram (cloud, нужен DEEPGRAM_API_KEY).
+        mlx = ["stable_ts_mlx", "mlx_whisper"] if IS_APPLE_SILICON else []
         cloud = ["deepgram"] if self.deepgram_api_key else []
         return mlx + cloud
 
     @property
     def default_transcriber(self) -> str:
-        # macOS → локальный MLX; Win/Linux → Deepgram (если ключ есть).
-        if IS_MACOS:
+        # Apple Silicon → локальный MLX; Intel-Mac/Win/Linux → Deepgram.
+        if IS_APPLE_SILICON:
             return "stable_ts_mlx"
         return "deepgram"
 

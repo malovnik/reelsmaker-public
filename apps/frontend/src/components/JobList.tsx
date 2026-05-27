@@ -155,7 +155,7 @@ export function JobList({ jobs: initial }: Props) {
       <div className="surface-card flex flex-col items-center gap-3 border-dashed p-12 text-center">
         <div
           aria-hidden="true"
-          className="flex size-12 items-center justify-center rounded-full bg-[color:var(--accent-primary-subtle)]"
+          className="flex size-12 items-center justify-center rounded-none bg-[color:var(--accent-primary-subtle)]"
         >
           <svg
             width="22"

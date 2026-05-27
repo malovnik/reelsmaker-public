@@ -289,7 +289,7 @@ export function TinderClient({ job, initialReels }: Props) {
         </div>
 
         {error && (
-          <p className="shrink-0 text-xs text-red-400">{error}</p>
+          <p className="shrink-0 text-xs text-[color:var(--chi)]">{error}</p>
         )}
 
         <div className="flex shrink-0 items-center gap-5">

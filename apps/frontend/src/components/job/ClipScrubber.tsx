@@ -71,7 +71,7 @@ export const ClipScrubber = forwardRef<ClipScrubberHandle, Props>(
             type="button"
             onClick={togglePlay}
             aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--accent-primary)] text-[color:var(--accent-on-primary)] transition-colors hover:bg-[color:var(--accent-primary-hover)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-none bg-[color:var(--accent-primary)] text-[color:var(--accent-on-primary)] transition-colors hover:bg-[color:var(--accent-primary-hover)]"
           >
             {isPlaying ? (
               <svg

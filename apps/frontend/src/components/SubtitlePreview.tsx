@@ -566,7 +566,7 @@ function FitVideoFrame({ letterbox, scale, previewWidth, previewHeight }: FitFra
         aria-hidden="true"
       />
       <span
-        className="absolute rounded bg-sky-500/85 px-1.5 py-0.5 font-mono text-[9px] text-white"
+        className="absolute rounded-none bg-[color:var(--info)]/85 px-1.5 py-0.5 font-mono text-[9px] text-[color:var(--ink)]"
         style={{
           left: `${frameLeft + 4}px`,
           top: `${frameTop + 4}px`,

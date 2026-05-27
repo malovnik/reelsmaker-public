@@ -34,6 +34,10 @@ from pathlib import Path
 
 from videomaker.core.logging import get_logger
 from videomaker.services.media import FfmpegError, MediaInfo, probe
+from videomaker.services.subprocess_utils import (
+    DEFAULT_SUBPROCESS_TIMEOUT_SEC,
+    communicate_with_timeout,
+)
 
 log = get_logger(__name__)
 
@@ -327,7 +331,15 @@ async def _ffmpeg_encode_proxy(
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.PIPE,
     )
-    _, stderr = await proc.communicate()
+    try:
+        _, stderr = await communicate_with_timeout(
+            proc, timeout_sec=DEFAULT_SUBPROCESS_TIMEOUT_SEC
+        )
+    except TimeoutError as exc:
+        raise FfmpegError(
+            f"proxy ffmpeg timed out after "
+            f"{DEFAULT_SUBPROCESS_TIMEOUT_SEC:.0f}s, process killed"
+        ) from exc
     if proc.returncode != 0:
         msg = stderr.decode(errors="replace")[-1000:]
         raise FfmpegError(

@@ -336,11 +336,12 @@ removed=0
 while IFS= read -r -d '' f; do rm -f "$f" && ((removed++)); done < <(
     find "$ROOT_DIR/data" \( -name '*.partial' -o -name '*.tmp' \) -type f -print0 2>/dev/null
 )
-# orphan-locks: только старше 5с (не задеть свежий лок), и никогда не *.db.
+# orphan-locks: только старше 1 мин (BSD find не принимает дробные -mmin;
+# свежий лок параллельного запуска не успеет состариться), и никогда не *.db.
 while IFS= read -r -d '' f; do
     case "$f" in *.db|*.db-wal|*.db-shm) continue;; esac
     rm -f "$f" && ((removed++))
-done < <(find "$ROOT_DIR/data" -name '*.lock' -type f -mmin +0.1 -print0 2>/dev/null)
+done < <(find "$ROOT_DIR/data" -name '*.lock' -type f -mmin +1 -print0 2>/dev/null)
 # stale bytecode
 find "$ROOT_DIR/apps/backend/src" -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true
 printf '%sубрано %d%s\n' "$DIM" "$removed" "$RESET"

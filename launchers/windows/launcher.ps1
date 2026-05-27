@@ -422,12 +422,14 @@ function Test-OursPid {
     $cmd  = "$($p.CommandLine)"
     $name = "$($p.Name)"
     $rootEsc = [regex]::Escape($RootDir)
+    # uvicorn videomaker.main — модуль уникален для этого ПО, путь не требуется.
     if ($cmd -match 'uvicorn videomaker\.main') { return $true }
-    if ($cmd -match 'uv run uvicorn')           { return $true }
-    if ($name -eq 'node.exe'  -and $cmd -match 'vite') { return $true }
-    if ($name -eq 'esbuild.exe')                { return $true }
-    if ($cmd -match 'pnpm' -and $cmd -match 'dev') { return $true }
-    if ($name -eq 'ffmpeg.exe' -and $cmd -match 'data[\\/]artifacts') { return $true }
+    # Остальное (vite/esbuild/pnpm/ffmpeg) — ТОЛЬКО если из нашего каталога,
+    # иначе прибьём чужой dev-сервер другого проекта на машине.
+    if ($name -eq 'node.exe'  -and $cmd -match 'vite' -and $cmd -match $rootEsc) { return $true }
+    if ($name -eq 'esbuild.exe' -and $cmd -match $rootEsc) { return $true }
+    if ($cmd -match 'pnpm' -and $cmd -match 'dev' -and $cmd -match $rootEsc) { return $true }
+    if ($name -eq 'ffmpeg.exe' -and $cmd -match 'data[\\/]artifacts' -and $cmd -match $rootEsc) { return $true }
     # Путь репо в cmdline/exe — наш процесс с неожиданной командой.
     if ($cmd -match $rootEsc) { return $true }
     if ($p.ExecutablePath -and ($p.ExecutablePath -match $rootEsc)) { return $true }

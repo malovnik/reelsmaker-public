@@ -414,11 +414,6 @@ PROC_PATTERNS=(
     "pnpm.*dev"
 )
 
-# PID'ы по сигнатуре.
-pids_by_pattern() {
-    pgrep -f "$1" 2>/dev/null | tr '\n' ' ' || true
-}
-
 # Только наши ffmpeg — по пути проекта data/, не чужие рендеры пользователя.
 pids_orphan_ffmpeg() {
     pgrep -f "ffmpeg.*${REELIBRA_ROOT//\//\\/}/data/" 2>/dev/null | tr '\n' ' ' || true
@@ -460,16 +455,27 @@ proc_desc() {
     ps -o comm= -p "$pid" 2>/dev/null | head -1
 }
 
-# Является ли pid нашим (по сигнатурам)?
+# Является ли pid НАШИМ. Якорь — путь проекта (наши vite/esbuild/pnpm/ffmpeg
+# запускаются из REELIBRA_ROOT, их args содержат этот путь) ИЛИ глобально
+# уникальный модуль бэкенда. Так мы НЕ убьём чужой vite/pnpm-dev другого проекта.
 is_our_pid() {
     local pid="$1" cmd
     cmd="$(ps -o args= -p "$pid" 2>/dev/null || true)"
     [[ -z "$cmd" ]] && return 1
-    local pat
-    for pat in "${PROC_PATTERNS[@]}" "ffmpeg.*${REELIBRA_ROOT}/data/"; do
-        [[ "$cmd" =~ $pat ]] && return 0
-    done
+    # uvicorn videomaker.main — уникален глобально, путь не требуется.
+    [[ "$cmd" == *"videomaker.main"* ]] && return 0
+    # Всё остальное (vite/esbuild/pnpm/ffmpeg) — только если из нашего каталога.
+    [[ "$cmd" == *"$REELIBRA_ROOT"* ]] && return 0
     return 1
+}
+
+# PID'ы по сигнатуре, отфильтрованные до НАШИХ (анти-fratricide).
+our_pids_by_pattern() {
+    local p out=""
+    for p in $(pgrep -f "$1" 2>/dev/null); do
+        is_our_pid "$p" && out+="$p "
+    done
+    printf '%s' "$out"
 }
 
 free_port() {
@@ -550,9 +556,10 @@ cleanup_previous_session() {
     fi
 
     # 2) Добиваем по сигнатурам (на случай если PID-файла не было — kill -9 терминала).
+    #    Только НАШИ pid (our_pids_by_pattern) — не трогаем чужие vite/pnpm-dev.
     local pat pids
     for pat in "${PROC_PATTERNS[@]}"; do
-        pids="$(pids_by_pattern "$pat")"
+        pids="$(our_pids_by_pattern "$pat")"
         [[ -n "${pids// /}" ]] && { info "Остаточные ($pat): $pids"; kill_graceful "$pids"; }
     done
     pids="$(pids_orphan_ffmpeg)"
@@ -587,10 +594,11 @@ runtime_cleanup() {
     [[ -n "$BACKEND_PID" ]]  && kill -TERM "$BACKEND_PID"  2>/dev/null || true
     [[ -n "$FRONTEND_PID" ]] && kill -TERM "$FRONTEND_PID" 2>/dev/null || true
     sleep 2
-    local pat
+    local pat pids
     for pat in "${PROC_PATTERNS[@]}"; do
-        # shellcheck disable=SC2046
-        kill -KILL $(pgrep -f "$pat" 2>/dev/null | tr '\n' ' ') 2>/dev/null || true
+        pids="$(our_pids_by_pattern "$pat")"
+        # shellcheck disable=SC2086
+        [[ -n "${pids// /}" ]] && kill -KILL $pids 2>/dev/null || true
     done
     rm -f "$PID_FILE" 2>/dev/null || true
     wait 2>/dev/null || true
